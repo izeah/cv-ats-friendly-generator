@@ -4,6 +4,7 @@ import Dexie, { type EntityTable } from 'dexie'
 
 export interface Project {
   id: string
+  title: string
   description: string
   startMonth: string
   startYear: string
@@ -28,8 +29,10 @@ export interface CVData {
   fullName: string
   phone: string
   city: string
+  about: string
   workExperiences: WorkExperience[]
   skills: string[]
+  isArchived: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -43,6 +46,23 @@ class CVDatabase extends Dexie {
     super('CVForgeDB')
     this.version(1).stores({
       cvs: 'email, fullName, updatedAt'
+    })
+    this.version(2).stores({
+      cvs: 'email, fullName, updatedAt, isArchived'
+    }).upgrade(tx => {
+      return tx.table('cvs').toCollection().modify(cv => {
+        if (cv.about === undefined) cv.about = ''
+        if (cv.isArchived === undefined) cv.isArchived = false
+        if (cv.workExperiences) {
+          cv.workExperiences.forEach((exp: WorkExperience) => {
+            if (exp.projects) {
+              exp.projects.forEach((proj: Project) => {
+                if (proj.title === undefined) proj.title = ''
+              })
+            }
+          })
+        }
+      })
     })
   }
 }
@@ -79,8 +99,22 @@ export async function getCVBySlug(slug: string): Promise<CVData | undefined> {
   })
 }
 
-export async function getAllCVs(): Promise<CVData[]> {
-  return db.cvs.orderBy('updatedAt').reverse().toArray()
+export async function getAllCVs(includeArchived = false): Promise<CVData[]> {
+  const all = await db.cvs.orderBy('updatedAt').reverse().toArray()
+  if (includeArchived) return all
+  return all.filter(cv => !cv.isArchived)
+}
+
+export async function getArchivedCVs(): Promise<CVData[]> {
+  const all = await db.cvs.orderBy('updatedAt').reverse().toArray()
+  return all.filter(cv => cv.isArchived)
+}
+
+export async function toggleArchive(email: string): Promise<void> {
+  const cv = await db.cvs.get(email)
+  if (cv) {
+    await db.cvs.update(email, { isArchived: !cv.isArchived, updatedAt: new Date() })
+  }
 }
 
 export async function deleteCVByEmail(email: string): Promise<void> {

@@ -1,20 +1,17 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Mail, Phone, MapPin, ArrowLeft, Download, Share2, ExternalLink,
-  Sparkles, Briefcase, Code2, FolderKanban, Calendar, CheckCircle2
+  Sparkles, Briefcase, Code2, FolderKanban, Calendar, CheckCircle2, Pencil
 } from 'lucide-react'
-import html2canvas from 'html2canvas-pro'
-import { jsPDF } from 'jspdf'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { getCVBySlug, type CVData } from '@/lib/db'
 import { formatDate } from '@/lib/utils'
+import { generateATSPDF } from '@/lib/pdf-generator'
 
 export default function CVPreview() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
-  const cvRef = useRef<HTMLDivElement>(null)
   const [cv, setCv] = useState<CVData | null>(null)
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
@@ -31,35 +28,10 @@ export default function CVPreview() {
   }, [slug])
 
   const exportToPDF = async () => {
-    if (!cvRef.current) return
+    if (!cv) return
     setExporting(true)
     try {
-      const canvas = await html2canvas(cvRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-      })
-
-      const imgWidth = 210 // A4 width in mm
-      const pageHeight = 297 // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-
-      const pdf = new jsPDF('p', 'mm', 'a4')
-      let heightLeft = imgHeight
-      let position = 0
-
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight)
-      heightLeft -= pageHeight
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight
-        pdf.addPage()
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight)
-        heightLeft -= pageHeight
-      }
-
-      pdf.save(`CV_${cv?.fullName?.replace(/\s+/g, '_') || 'Resume'}.pdf`)
+      generateATSPDF(cv)
     } catch (err) {
       console.error('PDF export failed:', err)
       alert('Failed to export PDF. Please try again.')
@@ -74,6 +46,14 @@ export default function CVPreview() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
+  }
+
+  const handleEdit = () => {
+    if (cv) {
+      navigate(`/create?email=${encodeURIComponent(cv.email)}`)
+    } else {
+      navigate('/create')
+    }
   }
 
   if (loading) {
@@ -113,82 +93,84 @@ export default function CVPreview() {
     <div className="min-h-screen bg-background noise-bg">
       {/* Controls Bar */}
       <div className="sticky top-0 z-50 glass border-b border-border/40 no-print">
-        <div className="max-w-[900px] mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-[850px] mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
               <ArrowLeft className="w-4 h-4 mr-1" /> Home
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/create')}>
-              Edit
+            <Button variant="ghost" size="sm" onClick={handleEdit}>
+              <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
             </Button>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={shareLink}>
               {copied ? <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-success" /> : <Share2 className="w-3.5 h-3.5 mr-1" />}
-              {copied ? 'Copied!' : 'Share Link'}
+              {copied ? 'Copied!' : 'Share'}
             </Button>
             <Button variant="gradient" size="sm" onClick={exportToPDF} disabled={exporting}>
               <Download className="w-3.5 h-3.5 mr-1" />
-              {exporting ? 'Exporting...' : 'Download PDF'}
+              {exporting ? '...' : 'PDF'}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* CV Document */}
-      <div className="max-w-[900px] mx-auto px-4 py-8 relative z-10">
-        <div
-          ref={cvRef}
-          className="bg-white text-[#1a1a2e] shadow-2xl shadow-primary/5 rounded-lg overflow-hidden"
-          style={{ fontFamily: "'Inter', sans-serif" }}
-        >
+      {/* CV Document — Dark themed, blended */}
+      <div className="max-w-[850px] mx-auto px-4 py-8 relative z-10">
+        <div className="rounded-xl border border-border/30 overflow-hidden bg-card/40 backdrop-blur-sm shadow-2xl shadow-primary/5">
+
           {/* ===== CV Header ===== */}
-          <div className="bg-gradient-to-r from-[#0f0f1a] via-[#1a1040] to-[#0f0f1a] text-white px-8 sm:px-12 py-8 sm:py-10">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1">
+          <div className="px-6 sm:px-10 pt-8 sm:pt-10 pb-6 border-b border-border/20">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-1">
               {cv.fullName}
             </h1>
-            <p className="text-[#a78bfa] font-medium text-sm sm:text-base mb-4">
-              Backend Developer
-            </p>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-300">
+            <p className="text-primary font-medium text-sm mb-4">Backend Developer</p>
+            <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
               {cv.email && (
                 <span className="flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-[#a78bfa]" />
-                  {cv.email}
+                  <Mail className="w-3.5 h-3.5 text-primary/60" />{cv.email}
                 </span>
               )}
               {cv.phone && (
                 <span className="flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-[#a78bfa]" />
-                  {cv.phone}
+                  <Phone className="w-3.5 h-3.5 text-primary/60" />{cv.phone}
                 </span>
               )}
               {cv.city && (
                 <span className="flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-[#a78bfa]" />
-                  {cv.city}
+                  <MapPin className="w-3.5 h-3.5 text-primary/60" />{cv.city}
                 </span>
               )}
             </div>
           </div>
 
-          <div className="px-8 sm:px-12 py-8 space-y-8">
+          <div className="px-6 sm:px-10 py-6 space-y-7">
+
+            {/* ===== About ===== */}
+            {cv.about && (
+              <section>
+                <h2 className="text-xs font-bold text-foreground/70 uppercase tracking-widest mb-2.5">
+                  Summary
+                </h2>
+                <div className="w-full h-[1px] bg-gradient-to-r from-primary/50 via-primary/20 to-transparent mb-3" />
+                <p className="text-sm text-foreground/80 leading-relaxed">{cv.about}</p>
+              </section>
+            )}
+
             {/* ===== Technical Skills ===== */}
             {cv.skills.length > 0 && (
               <section>
-                <div className="flex items-center gap-2 mb-4">
-                  <Code2 className="w-5 h-5 text-[#6d5aff]" />
-                  <h2 className="text-lg font-bold text-[#0f0f1a] uppercase tracking-wider text-[13px]">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <Code2 className="w-4 h-4 text-primary/60" />
+                  <h2 className="text-xs font-bold text-foreground/70 uppercase tracking-widest">
                     Technical Skills
                   </h2>
                 </div>
-                <div className="w-full h-[1px] bg-gradient-to-r from-[#6d5aff] via-[#6d5aff]/40 to-transparent mb-4" />
-                <div className="flex flex-wrap gap-2">
+                <div className="w-full h-[1px] bg-gradient-to-r from-primary/50 via-primary/20 to-transparent mb-3" />
+                <div className="flex flex-wrap gap-1.5">
                   {cv.skills.map(skill => (
-                    <span
-                      key={skill}
-                      className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-[#f0eeff] text-[#4338ca] border border-[#e0dcff]"
-                    >
+                    <span key={skill}
+                      className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary/8 text-primary border border-primary/15">
                       {skill}
                     </span>
                   ))}
@@ -199,15 +181,15 @@ export default function CVPreview() {
             {/* ===== Work Experience ===== */}
             {cv.workExperiences.length > 0 && cv.workExperiences.some(e => e.company) && (
               <section>
-                <div className="flex items-center gap-2 mb-4">
-                  <Briefcase className="w-5 h-5 text-[#6d5aff]" />
-                  <h2 className="text-lg font-bold text-[#0f0f1a] uppercase tracking-wider text-[13px]">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <Briefcase className="w-4 h-4 text-primary/60" />
+                  <h2 className="text-xs font-bold text-foreground/70 uppercase tracking-widest">
                     Work Experience
                   </h2>
                 </div>
-                <div className="w-full h-[1px] bg-gradient-to-r from-[#6d5aff] via-[#6d5aff]/40 to-transparent mb-6" />
+                <div className="w-full h-[1px] bg-gradient-to-r from-primary/50 via-primary/20 to-transparent mb-4" />
 
-                <div className="space-y-8">
+                <div className="space-y-6">
                   {cv.workExperiences.filter(e => e.company).map((exp) => {
                     const startDate = formatDate(exp.startMonth, exp.startYear)
                     const endDate = exp.endMonth && exp.endYear
@@ -215,31 +197,26 @@ export default function CVPreview() {
                       : 'Present'
 
                     return (
-                      <div key={exp.id} className="relative">
-                        {/* Company Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2">
-                          <div>
-                            <h3 className="text-base font-bold text-[#0f0f1a]">
-                              {exp.company}
-                            </h3>
-                            {exp.description && (
-                              <p className="text-sm text-[#475569] mt-1 leading-relaxed">
-                                {exp.description}
-                              </p>
-                            )}
-                          </div>
+                      <div key={exp.id}>
+                        {/* Company */}
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-1.5">
+                          <h3 className="text-sm font-bold text-foreground">{exp.company}</h3>
                           {startDate && (
-                            <span className="flex items-center gap-1 text-xs text-[#6d5aff] font-medium mt-1 sm:mt-0 whitespace-nowrap shrink-0">
-                              <Calendar className="w-3 h-3" />
-                              {startDate} — {endDate}
+                            <span className="flex items-center gap-1 text-xs text-primary/80 font-medium mt-0.5 sm:mt-0 whitespace-nowrap">
+                              <Calendar className="w-3 h-3" />{startDate} — {endDate}
                             </span>
                           )}
                         </div>
+                        {exp.description && (
+                          <p className="text-xs text-muted-foreground italic leading-relaxed mb-2">
+                            {exp.description}
+                          </p>
+                        )}
 
                         {/* Projects */}
-                        {exp.projects.filter(p => p.description).length > 0 && (
-                          <div className="mt-4 space-y-4 pl-4 border-l-2 border-[#e0dcff]">
-                            {exp.projects.filter(p => p.description).map((project) => {
+                        {exp.projects.filter(p => p.description || p.title).length > 0 && (
+                          <div className="mt-2 space-y-3 pl-3.5 border-l border-primary/15">
+                            {exp.projects.filter(p => p.description || p.title).map((project) => {
                               const projStart = formatDate(project.startMonth, project.startYear)
                               const projEnd = project.endMonth && project.endYear
                                 ? formatDate(project.endMonth, project.endYear)
@@ -247,33 +224,37 @@ export default function CVPreview() {
 
                               return (
                                 <div key={project.id} className="relative">
-                                  {/* Dot indicator */}
-                                  <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#6d5aff] border-2 border-white" />
+                                  {/* Dot */}
+                                  <div className="absolute -left-[17px] top-1.5 w-2 h-2 rounded-full bg-primary/50 border-2 border-background" />
 
-                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1">
-                                    <div className="flex-1">
-                                      <div className="flex items-start gap-1.5">
-                                        <FolderKanban className="w-3.5 h-3.5 text-[#6d5aff] mt-0.5 shrink-0" />
-                                        <p className="text-sm text-[#1e293b] leading-relaxed">
-                                          {project.description}
-                                        </p>
-                                      </div>
+                                  {/* Project title */}
+                                  {project.title && (
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 mb-1">
+                                      <h4 className="text-sm font-semibold text-foreground/90 flex items-center gap-1.5">
+                                        <FolderKanban className="w-3 h-3 text-primary/50" />
+                                        {project.title}
+                                      </h4>
+                                      {projStart && (
+                                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                          {projStart} — {projEnd}
+                                        </span>
+                                      )}
                                     </div>
-                                    {projStart && (
-                                      <span className="text-xs text-[#94a3b8] whitespace-nowrap shrink-0 ml-5 sm:ml-0">
-                                        {projStart} — {projEnd}
-                                      </span>
-                                    )}
-                                  </div>
+                                  )}
+
+                                  {/* Description */}
+                                  {project.description && (
+                                    <p className="text-xs text-foreground/70 leading-relaxed">
+                                      {project.description}
+                                    </p>
+                                  )}
 
                                   {/* Technologies */}
                                   {project.technologies.length > 0 && (
-                                    <div className="flex flex-wrap gap-1.5 mt-2 ml-5">
+                                    <div className="flex flex-wrap gap-1 mt-1.5">
                                       {project.technologies.map(tech => (
-                                        <span
-                                          key={tech}
-                                          className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#f8fafc] text-[#475569] border border-[#e2e8f0]"
-                                        >
+                                        <span key={tech}
+                                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted/50 text-muted-foreground border border-border/30">
                                           {tech}
                                         </span>
                                       ))}
@@ -293,23 +274,24 @@ export default function CVPreview() {
           </div>
 
           {/* Footer */}
-          <div className="px-8 sm:px-12 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] text-center">
-            <p className="text-[10px] text-[#94a3b8]">
+          <div className="px-6 sm:px-10 py-3 border-t border-border/20 text-center">
+            <p className="text-[10px] text-muted-foreground/50">
               Generated by CV Forge — ATS-Friendly CV Generator
             </p>
           </div>
         </div>
 
-        {/* Bottom Actions (Mobile) */}
+        {/* Mobile Bottom Actions */}
         <div className="fixed bottom-0 left-0 right-0 glass border-t border-border/40 p-3 sm:hidden no-print">
-          <div className="flex gap-2 max-w-[900px] mx-auto">
+          <div className="flex gap-2 max-w-[850px] mx-auto">
+            <Button variant="outline" size="default" className="flex-1" onClick={handleEdit}>
+              <Pencil className="w-4 h-4 mr-1" /> Edit
+            </Button>
             <Button variant="outline" size="default" className="flex-1" onClick={shareLink}>
-              <Share2 className="w-4 h-4 mr-1" />
-              {copied ? 'Copied!' : 'Share'}
+              <Share2 className="w-4 h-4 mr-1" />{copied ? 'Copied!' : 'Share'}
             </Button>
             <Button variant="gradient" size="default" className="flex-1" onClick={exportToPDF} disabled={exporting}>
-              <Download className="w-4 h-4 mr-1" />
-              {exporting ? '...' : 'PDF'}
+              <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'PDF'}
             </Button>
           </div>
         </div>
