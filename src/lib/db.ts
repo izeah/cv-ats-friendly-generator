@@ -64,6 +64,9 @@ class CVDatabase extends Dexie {
         }
       })
     })
+    this.version(3).stores({
+      cvs: 'email, fullName, updatedAt, isArchived, createdAt'
+    })
   }
 }
 
@@ -100,13 +103,13 @@ export async function getCVBySlug(slug: string): Promise<CVData | undefined> {
 }
 
 export async function getAllCVs(includeArchived = false): Promise<CVData[]> {
-  const all = await db.cvs.orderBy('updatedAt').reverse().toArray()
+  const all = await db.cvs.orderBy('createdAt').reverse().toArray()
   if (includeArchived) return all
   return all.filter(cv => !cv.isArchived)
 }
 
 export async function getArchivedCVs(): Promise<CVData[]> {
-  const all = await db.cvs.orderBy('updatedAt').reverse().toArray()
+  const all = await db.cvs.orderBy('createdAt').reverse().toArray()
   return all.filter(cv => cv.isArchived)
 }
 

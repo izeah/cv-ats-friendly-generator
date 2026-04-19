@@ -208,7 +208,7 @@ export default function CVPreview() {
                           )}
                         </div>
                         {exp.description && (
-                          <p className="text-xs text-muted-foreground italic leading-relaxed mb-2">
+                          <p className="text-xs text-foreground leading-relaxed mb-2">
                             {exp.description}
                           </p>
                         )}
@@ -235,8 +235,8 @@ export default function CVPreview() {
                                         {project.title}
                                       </h4>
                                       {projStart && (
-                                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                                          {projStart} — {projEnd}
+                                        <span className="flex items-center gap-1 text-[10px] text-primary/80 font-medium whitespace-nowrap">
+                                          <Calendar className="w-2.5 h-2.5" />{projStart} — {projEnd}
                                         </span>
                                       )}
                                     </div>
@@ -244,7 +244,7 @@ export default function CVPreview() {
 
                                   {/* Description */}
                                   {project.description && (
-                                    <p className="text-xs text-foreground/70 leading-relaxed">
+                                    <p className="text-xs text-foreground/70 leading-relaxed whitespace-pre-wrap">
                                       {project.description}
                                     </p>
                                   )}
