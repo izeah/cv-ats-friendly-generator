@@ -110,7 +110,7 @@ export function generateATSPDF(cv: CVData): void {
         pdf.text(title.toUpperCase(), MARGIN_LEFT, y);
         y += 2;
         // Underline
-        pdf.setDrawColor(...ACCENT_COLOR);
+        pdf.setDrawColor(...TEXT_COLOR);
         pdf.setLineWidth(0.6);
         pdf.line(MARGIN_LEFT, y, MARGIN_LEFT + CONTENT_WIDTH, y);
         y += 4;
@@ -157,18 +157,12 @@ export function generateATSPDF(cv: CVData): void {
     if (contactParts.length > 0) {
         pdf.setFontSize(9);
         pdf.setFont("helvetica", "normal");
-        pdf.setTextColor(...MUTED_COLOR);
+        pdf.setTextColor(...TEXT_COLOR);
         pdf.text(contactParts.join("  |  "), PAGE_WIDTH / 2, y, {
             align: "center",
         });
         y += 5;
     }
-
-    // Thin separator
-    pdf.setDrawColor(...ACCENT_COLOR);
-    pdf.setLineWidth(0.4);
-    pdf.line(MARGIN_LEFT + 20, y, PAGE_WIDTH - MARGIN_RIGHT - 20, y);
-    y += 3;
 
     // ============================================================
     // ===== ABOUT / SUMMARY =====
@@ -220,7 +214,7 @@ export function generateATSPDF(cv: CVData): void {
             if (dateRange) {
                 pdf.setFontSize(9);
                 pdf.setFont("helvetica", "normal");
-                pdf.setTextColor(...ACCENT_COLOR);
+                pdf.setTextColor(...TEXT_COLOR);
                 pdf.text(dateRange, PAGE_WIDTH - MARGIN_RIGHT, y, {
                     align: "right",
                 });
@@ -262,7 +256,7 @@ export function generateATSPDF(cv: CVData): void {
                     if (projDateRange) {
                         pdf.setFontSize(8);
                         pdf.setFont("helvetica", "normal");
-                        pdf.setTextColor(...MUTED_COLOR);
+                        pdf.setTextColor(...TEXT_COLOR);
                         pdf.text(projDateRange, PAGE_WIDTH - MARGIN_RIGHT, y, {
                             align: "right",
                         });
@@ -288,7 +282,7 @@ export function generateATSPDF(cv: CVData): void {
                     const techStr = `Tech: ${project.technologies.join(", ")}`;
                     pdf.setFontSize(8);
                     pdf.setFont("helvetica", "italic");
-                    pdf.setTextColor(...MUTED_COLOR);
+                    pdf.setTextColor(...TEXT_COLOR);
                     const techLines = pdf.splitTextToSize(
                         techStr,
                         CONTENT_WIDTH - 8,
