@@ -124,7 +124,9 @@ export default function CVPreview() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-1">
               {cv.fullName}
             </h1>
-            <p className="text-primary font-medium text-sm mb-4">Backend Developer</p>
+            {cv.occupation && (
+              <p className="text-primary font-medium text-sm mb-4">{cv.occupation}</p>
+            )}
             <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
               {cv.email && (
                 <span className="flex items-center gap-1.5">

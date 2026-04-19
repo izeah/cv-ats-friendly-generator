@@ -146,7 +146,18 @@ export function generateATSPDF(cv: CVData): void {
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(...TEXT_COLOR);
     pdf.text(cv.fullName, PAGE_WIDTH / 2, y, { align: "center" });
-    y += 7;
+    y += 6;
+
+    // Occupation
+    if (cv.occupation) {
+      pdf.setFontSize(11);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(...TEXT_COLOR);
+      pdf.text(cv.occupation, PAGE_WIDTH / 2, y, { align: "center" });
+      y += 5;
+    } else {
+      y += 1;
+    }
 
     // Contact line
     const contactParts: string[] = [];

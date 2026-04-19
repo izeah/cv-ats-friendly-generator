@@ -27,6 +27,7 @@ export interface WorkExperience {
 export interface CVData {
   email: string  // primary key
   fullName: string
+  occupation?: string
   phone: string
   city: string
   about: string

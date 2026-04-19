@@ -607,6 +607,7 @@ export default function CVForm() {
 
     // Form state
     const [fullName, setFullName] = useState("");
+    const [occupation, setOccupation] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
     const [city, setCity] = useState("");
@@ -620,6 +621,7 @@ export default function CVForm() {
     // Reset form function
     const resetForm = () => {
         setFullName("");
+        setOccupation("");
         setEmail("");
         setPhone("");
         setCity("");
@@ -634,6 +636,7 @@ export default function CVForm() {
         const existing = await getCVByEmail(targetEmail.trim().toLowerCase());
         if (existing) {
             setFullName(existing.fullName);
+            setOccupation(existing.occupation || "");
             setEmail(existing.email);
             setPhone(existing.phone);
             setCity(existing.city);
@@ -721,6 +724,7 @@ export default function CVForm() {
             const cvData: CVData = {
                 email: email.trim().toLowerCase(),
                 fullName: fullName.trim(),
+                occupation: occupation.trim(),
                 phone: phone.trim(),
                 city: city.trim(),
                 about: about.trim(),
@@ -753,6 +757,7 @@ export default function CVForm() {
                     const cvData: CVData = {
                         email: email.trim().toLowerCase(),
                         fullName: fullName.trim(),
+                        occupation: occupation.trim(),
                         phone: phone.trim(),
                         city: city.trim(),
                         about: about.trim(),
@@ -847,6 +852,23 @@ export default function CVForm() {
                                             setFullName(e.target.value)
                                         }
                                         placeholder="John Doe"
+                                        className="mt-1 bg-muted/50"
+                                    />
+                                </div>
+                                <div>
+                                    <Label
+                                        htmlFor="occupation"
+                                        className="flex items-center gap-1.5 text-xs"
+                                    >
+                                        <Briefcase className="w-3 h-3" /> Occupation
+                                    </Label>
+                                    <Input
+                                        id="occupation"
+                                        value={occupation}
+                                        onChange={(e) =>
+                                            setOccupation(e.target.value)
+                                        }
+                                        placeholder="e.g., Backend Developer, Social Media Strategist"
                                         className="mt-1 bg-muted/50"
                                     />
                                 </div>
