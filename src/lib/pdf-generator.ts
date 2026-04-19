@@ -229,7 +229,7 @@ export function generateATSPDF(cv: CVData): void {
 
             // Job description (italic)
             if (exp.description) {
-                drawText(exp.description, 9, MUTED_COLOR, "italic");
+                drawText(exp.description, 9, TEXT_COLOR, "italic");
             }
 
             y += 1.5;
