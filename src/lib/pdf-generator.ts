@@ -39,6 +39,36 @@ export function generateATSPDF(cv: CVData): void {
     return pdf.splitTextToSize(text, maxWidth) as string[]
   }
 
+  // ===== Helper: Parse description into list items =====
+  function parseDescriptionItems(text: string): string[] | null {
+    const lines = text.split('\n').filter(line => line.trim())
+    if (lines.length < 2) return null // Need at least 2 lines to be considered a list
+
+    // Pattern to detect list markers: ✅, -, •, *, number (1. 2. etc), or common emoticons
+    const listMarkerPattern = /^[\s]*(✅|✔|✓|-|–|•|\*|\d+\.|\[x\]|→|▪|◾|◆|❯|❱|◊|◈|🟩|🟪|🟨|🟦|⭐|💫|✨|⚡|🔥|📌|📍|🎯|📝|✍|👉|☑|☐|●|○)\s*/
+
+    // Check if most lines match the pattern (at least 50%)
+    const matchingLines = lines.filter(line => listMarkerPattern.test(line.trim()))
+    if (matchingLines.length < Math.ceil(lines.length * 0.5)) return null
+
+    // Parse items: remove marker and keep the text
+    return lines.map(line => {
+      const trimmed = line.trim()
+      const match = trimmed.match(listMarkerPattern)
+      if (match) {
+        return trimmed.substring(match[0].length).trim()
+      }
+      return trimmed
+    }).filter(item => item.length > 0)
+  }
+
+  // ===== Helper: Draw multiple bullets =====
+  function drawBullets(items: string[], indent: number = 4): void {
+    items.forEach(item => {
+      drawBullet(item, indent)
+    })
+  }
+
   // ===== Helper: Draw text block =====
   function drawText(
     text: string,
@@ -215,9 +245,16 @@ export function generateATSPDF(cv: CVData): void {
           y += LINE_HEIGHT
         }
 
-        // Project description as bullet
+        // Project description as bullet(s)
         if (project.description) {
-          drawBullet(project.description, 4)
+          const items = parseDescriptionItems(project.description)
+          if (items) {
+            // Description has list items - render as multiple bullets
+            drawBullets(items, 4)
+          } else {
+            // Regular description - render as single bullet
+            drawBullet(project.description, 4)
+          }
         }
 
         // Technologies
