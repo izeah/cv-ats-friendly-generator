@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
     Sparkles,
@@ -11,6 +12,7 @@ import {
     X,
     Eye,
     ChevronLeft,
+    MoreVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,7 +45,10 @@ export default function Sidebar({
     const [archivedCvs, setArchivedCvs] = useState<CVData[]>([]);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
-    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+    const [deleteConfirmEmail, setDeleteConfirmEmail] = useState<string | null>(
+        null,
+    );
 
     const loadData = async () => {
         const active = await getAllCVs(false);
@@ -55,6 +60,16 @@ export default function Sidebar({
     useEffect(() => {
         loadData();
     }, [refreshTrigger]);
+
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setOpenDropdown(null);
+        };
+        document.addEventListener("click", handleClickOutside);
+        return () => {
+            document.removeEventListener("click", handleClickOutside);
+        };
+    }, []);
 
     const handleSelect = (email: string) => {
         onSelectCV?.(email);
@@ -70,7 +85,8 @@ export default function Sidebar({
 
     const handleDelete = async (email: string) => {
         await deleteCVByEmail(email);
-        setDeleteConfirm(null);
+        setDeleteConfirmEmail(null);
+        setOpenDropdown(null);
         await loadData();
         if (currentEmail === email) {
             navigate("/create");
@@ -256,79 +272,211 @@ export default function Sidebar({
                                 )}
                             </div>
 
-                            {/* Actions */}
+                            {/* Actions - Three-dot menu */}
                             {!isCollapsed && (
-                                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5">
-                                    <button
-                                        onClick={(e) =>
-                                            handlePreview(cv.email, e)
-                                        }
-                                        className="p-1 rounded hover:bg-muted/80 text-muted-foreground hover:text-primary transition-colors"
-                                        title="Preview CV"
-                                    >
-                                        <Eye className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleArchive(cv.email);
-                                        }}
-                                        className="p-1 rounded hover:bg-muted/80 text-muted-foreground hover:text-warning transition-colors"
-                                        title={
-                                            cv.isArchived
-                                                ? "Unarchive"
-                                                : "Archive"
-                                        }
-                                    >
-                                        {cv.isArchived ? (
-                                            <ArchiveRestore className="w-3 h-3" />
-                                        ) : (
-                                            <Archive className="w-3 h-3" />
+                                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 hidden lg:group-hover:flex lg:hidden md:flex items-center">
+                                    <div className="relative">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOpenDropdown(
+                                                    openDropdown === cv.email
+                                                        ? null
+                                                        : cv.email,
+                                                );
+                                            }}
+                                            className="p-1.5 rounded hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
+                                            title="More options"
+                                        >
+                                            <MoreVertical className="w-4 h-4" />
+                                        </button>
+
+                                        {/* Dropdown menu */}
+                                        {openDropdown === cv.email && (
+                                            <div className="absolute right-0 mt-1 w-40 bg-card border border-border/60 rounded-lg shadow-lg z-50 overflow-hidden animate-fade-in">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handlePreview(
+                                                            cv.email,
+                                                            e,
+                                                        );
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors border-b border-border/20 last:border-b-0"
+                                                >
+                                                    <Eye className="w-4 h-4 text-primary/70" />
+                                                    Preview
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleArchive(cv.email);
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors border-b border-border/20 last:border-b-0"
+                                                >
+                                                    {cv.isArchived ? (
+                                                        <>
+                                                            <ArchiveRestore className="w-4 h-4 text-warning/70" />
+                                                            Unarchive
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Archive className="w-4 h-4 text-warning/70" />
+                                                            Archive
+                                                        </>
+                                                    )}
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setDeleteConfirmEmail(
+                                                            cv.email,
+                                                        );
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors border-b border-border/20 last:border-b-0"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    Delete
+                                                </button>
+                                            </div>
                                         )}
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setDeleteConfirm(cv.email);
-                                        }}
-                                        className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                                        title="Delete"
-                                    >
-                                        <Trash2 className="w-3 h-3" />
-                                    </button>
+                                    </div>
                                 </div>
                             )}
 
-                            {/* Delete confirmation */}
-                            {deleteConfirm === cv.email && (
-                                <div className="absolute inset-0 bg-card/95 backdrop-blur-sm rounded-lg flex items-center justify-center gap-2 z-10 animate-fade-in">
-                                    <span className="text-xs text-destructive font-medium">
-                                        Delete?
-                                    </span>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        className="h-6 text-xs px-2"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(cv.email);
-                                        }}
-                                    >
-                                        Yes
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 text-xs px-2"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setDeleteConfirm(null);
-                                        }}
-                                    >
-                                        No
-                                    </Button>
+                            {/* Mobile actions - Always show on mobile */}
+                            {!isCollapsed && (
+                                <div className="md:hidden flex lg:hidden items-center absolute right-2.5 top-1/2 -translate-y-1/2">
+                                    <div className="relative">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOpenDropdown(
+                                                    openDropdown === cv.email
+                                                        ? null
+                                                        : cv.email,
+                                                );
+                                            }}
+                                            className="p-1.5 rounded hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
+                                            title="More options"
+                                        >
+                                            <MoreVertical className="w-4 h-4" />
+                                        </button>
+
+                                        {/* Dropdown menu for mobile */}
+                                        {openDropdown === cv.email && (
+                                            <div className="absolute right-0 mt-1 w-40 bg-card border border-border/60 rounded-lg shadow-lg z-50 overflow-hidden animate-fade-in">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handlePreview(
+                                                            cv.email,
+                                                            e,
+                                                        );
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors border-b border-border/20 last:border-b-0"
+                                                >
+                                                    <Eye className="w-4 h-4 text-primary/70" />
+                                                    Preview
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleArchive(cv.email);
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors border-b border-border/20 last:border-b-0"
+                                                >
+                                                    {cv.isArchived ? (
+                                                        <>
+                                                            <ArchiveRestore className="w-4 h-4 text-warning/70" />
+                                                            Unarchive
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Archive className="w-4 h-4 text-warning/70" />
+                                                            Archive
+                                                        </>
+                                                    )}
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setDeleteConfirmEmail(
+                                                            cv.email,
+                                                        );
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors border-b border-border/20 last:border-b-0"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
+
+                            {/* Delete Confirmation Modal - Portalled to body */}
+                            {deleteConfirmEmail === cv.email &&
+                                createPortal(
+                                    <>
+                                        {/* Modal backdrop */}
+                                        <div
+                                            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] animate-fade-in"
+                                            onClick={() =>
+                                                setDeleteConfirmEmail(null)
+                                            }
+                                        />
+                                        {/* Modal */}
+                                        <div className="fixed inset-0 flex items-center justify-center z-[101] animate-fade-in p-4">
+                                            <div className="bg-card border border-border/60 rounded-lg shadow-lg max-w-sm w-full animate-scale-in">
+                                                <div className="p-6">
+                                                    <h2 className="text-lg font-semibold text-foreground mb-2">
+                                                        Delete CV
+                                                    </h2>
+                                                    <p className="text-sm text-muted-foreground mb-6">
+                                                        Are you sure you want to
+                                                        delete{" "}
+                                                        <span className="font-medium text-foreground">
+                                                            {cv.fullName}
+                                                        </span>
+                                                        ? This action cannot be
+                                                        undone.
+                                                    </p>
+                                                    <div className="flex gap-3 justify-end">
+                                                        <Button
+                                                            variant="ghost"
+                                                            onClick={() =>
+                                                                setDeleteConfirmEmail(
+                                                                    null,
+                                                                )
+                                                            }
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                        <Button
+                                                            variant="destructive"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    cv.email,
+                                                                )
+                                                            }
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>,
+                                    document.body,
+                                )}
                         </div>
                     );
                 })}
