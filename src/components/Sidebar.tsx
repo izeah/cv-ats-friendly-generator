@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -13,13 +13,21 @@ import {
     Eye,
     ChevronLeft,
     MoreVertical,
+    Download,
+    Upload,
+    CircleCheck,
+    CircleAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+    db,
     getAllCVs,
     getArchivedCVs,
+    getCVByEmail,
     deleteCVByEmail,
     toggleArchive,
+    downloadCVJson,
+    parseCVJson,
     type CVData,
 } from "@/lib/db";
 import { generateSlug, cn } from "@/lib/utils";
@@ -27,6 +35,7 @@ import { generateSlug, cn } from "@/lib/utils";
 interface SidebarProps {
     currentEmail?: string;
     onSelectCV?: (email: string) => void;
+    onImported?: (email: string) => void;
     refreshTrigger?: number;
     isCollapsed?: boolean;
     onToggleSidebar?: () => void;
@@ -35,6 +44,7 @@ interface SidebarProps {
 export default function Sidebar({
     currentEmail,
     onSelectCV,
+    onImported,
     refreshTrigger,
     isCollapsed = false,
     onToggleSidebar,
@@ -49,6 +59,18 @@ export default function Sidebar({
     const [deleteConfirmEmail, setDeleteConfirmEmail] = useState<string | null>(
         null,
     );
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [pendingImport, setPendingImport] = useState<CVData | null>(null);
+    const [toast, setToast] = useState<{
+        type: "success" | "error";
+        message: string;
+    } | null>(null);
+
+    useEffect(() => {
+        if (!toast) return;
+        const timer = setTimeout(() => setToast(null), 3500);
+        return () => clearTimeout(timer);
+    }, [toast]);
 
     const loadData = async () => {
         const active = await getAllCVs(false);
@@ -96,6 +118,45 @@ export default function Sidebar({
     const handleArchive = async (email: string) => {
         await toggleArchive(email);
         await loadData();
+    };
+
+    const handleExport = (cv: CVData) => {
+        downloadCVJson(cv);
+        setToast({ type: "success", message: `Exported ${cv.fullName}` });
+    };
+
+    const importCV = async (cv: CVData) => {
+        try {
+            await db.cvs.put(cv);
+            setShowArchived(false);
+            await loadData();
+            handleSelect(cv.email);
+            onImported?.(cv.email);
+            setToast({ type: "success", message: `Imported ${cv.fullName}` });
+        } catch (err) {
+            console.error("Import failed:", err);
+            setToast({ type: "error", message: "Failed to save imported CV." });
+        } finally {
+            setPendingImport(null);
+        }
+    };
+
+    const handleImportFile = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = e.target.files?.[0];
+        e.target.value = ""; // allow picking the same file again
+        if (!file) return;
+        try {
+            const cv = parseCVJson(await file.text());
+            if (await getCVByEmail(cv.email)) setPendingImport(cv);
+            else await importCV(cv);
+        } catch (err) {
+            setToast({
+                type: "error",
+                message: err instanceof Error ? err.message : "Import failed.",
+            });
+        }
     };
 
     const handleNewCV = () => {
@@ -166,16 +227,26 @@ export default function Sidebar({
                 </div>
             </div>
 
-            {/* New CV button */}
-            <div className="p-3">
+            {/* New CV + Import buttons */}
+            <div className={cn("p-3 flex gap-2", isCollapsed && "flex-col")}>
                 <Button
                     variant="gradient"
                     size={isCollapsed ? "icon" : "sm"}
-                    className={cn("w-full", isCollapsed && "w-8 h-8")}
+                    className={cn("flex-1", isCollapsed && "w-8 h-8 flex-none")}
                     onClick={handleNewCV}
                 >
                     <Plus className="w-4 h-4" />
                     {!isCollapsed && <span className="ml-1">New CV</span>}
+                </Button>
+                <Button
+                    variant="outline"
+                    size={isCollapsed ? "icon" : "sm"}
+                    className={cn(isCollapsed && "w-8 h-8")}
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Import CV from JSON"
+                >
+                    <Upload className="w-4 h-4" />
+                    {!isCollapsed && <span>Import</span>}
                 </Button>
             </div>
 
@@ -311,6 +382,17 @@ export default function Sidebar({
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
+                                                        handleExport(cv);
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors border-b border-border/20 last:border-b-0"
+                                                >
+                                                    <Download className="w-4 h-4 text-info/70" />
+                                                    Export JSON
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                         handleArchive(cv.email);
                                                         setOpenDropdown(null);
                                                     }}
@@ -382,6 +464,17 @@ export default function Sidebar({
                                                 >
                                                     <Eye className="w-4 h-4 text-primary/70" />
                                                     Preview
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleExport(cv);
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors border-b border-border/20 last:border-b-0"
+                                                >
+                                                    <Download className="w-4 h-4 text-info/70" />
+                                                    Export JSON
                                                 </button>
                                                 <button
                                                     onClick={(e) => {
@@ -486,6 +579,74 @@ export default function Sidebar({
 
     return (
         <>
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={handleImportFile}
+            />
+
+            {/* Import conflict modal */}
+            {pendingImport && (
+                <>
+                    <div
+                        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] animate-fade-in"
+                        onClick={() => setPendingImport(null)}
+                    />
+                    <div className="fixed inset-0 flex items-center justify-center z-[101] animate-fade-in p-4 pointer-events-none">
+                        <div className="bg-card border border-border/60 rounded-lg shadow-lg max-w-sm w-full animate-scale-in pointer-events-auto">
+                            <div className="p-6">
+                                <h2 className="text-lg font-semibold text-foreground mb-2">
+                                    Replace existing CV?
+                                </h2>
+                                <p className="text-sm text-muted-foreground mb-6">
+                                    A CV for{" "}
+                                    <span className="font-medium text-foreground break-all">
+                                        {pendingImport.email}
+                                    </span>{" "}
+                                    already exists. Importing will overwrite it
+                                    with{" "}
+                                    <span className="font-medium text-foreground">
+                                        {pendingImport.fullName}
+                                    </span>{" "}
+                                    from the file. This action cannot be undone.
+                                </p>
+                                <div className="flex gap-3 justify-end">
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => setPendingImport(null)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={() => importCV(pendingImport)}
+                                    >
+                                        Replace
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Toast */}
+            {toast && (
+                <div
+                    role="status"
+                    className="fixed bottom-4 left-4 right-4 sm:left-auto sm:max-w-sm z-[110] flex items-center gap-2.5 px-4 py-3 rounded-lg bg-card border border-border/60 shadow-lg text-sm text-foreground animate-slide-up"
+                >
+                    {toast.type === "success" ? (
+                        <CircleCheck className="w-4 h-4 text-success shrink-0" />
+                    ) : (
+                        <CircleAlert className="w-4 h-4 text-destructive shrink-0" />
+                    )}
+                    <span>{toast.message}</span>
+                </div>
+            )}
+
             {/* Mobile hamburger */}
             <button
                 onClick={() => setIsMobileOpen(true)}

@@ -782,6 +782,12 @@ export default function CVForm() {
             <Sidebar
                 currentEmail={email}
                 onSelectCV={handleSidebarSelect}
+                onImported={(importedEmail) => {
+                    // Same URL won't re-trigger the load effect, so reload here
+                    // before auto-save writes the stale form back over the import.
+                    if (importedEmail === email.trim().toLowerCase())
+                        loadCVData(importedEmail);
+                }}
                 refreshTrigger={sidebarRefresh}
                 isCollapsed={sidebarCollapsed}
                 onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}

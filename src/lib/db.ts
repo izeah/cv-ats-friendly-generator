@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
+import { v4 as uuidv4 } from 'uuid'
 
 // ===== Type Definitions =====
 
@@ -123,4 +124,70 @@ export async function toggleArchive(email: string): Promise<void> {
 
 export async function deleteCVByEmail(email: string): Promise<void> {
   await db.cvs.delete(email)
+}
+
+// ===== JSON Import / Export =====
+
+export function downloadCVJson(cv: CVData): void {
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(cv, null, 2)], { type: 'application/json' })
+  )
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${cv.fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cv'}.json`
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url))
+}
+
+const str = (v: unknown): string => (typeof v === 'string' ? v : '')
+const strList = (v: unknown): string[] =>
+  Array.isArray(v) ? v.filter((s): s is string => typeof s === 'string') : []
+const objList = (v: unknown): Record<string, unknown>[] =>
+  Array.isArray(v) ? v.filter(o => o !== null && typeof o === 'object') : []
+
+// Imported files are untrusted: keep only known fields, coerce types, fill defaults.
+export function parseCVJson(text: string): CVData {
+  let raw: Record<string, unknown>
+  try {
+    raw = JSON.parse(text)
+  } catch {
+    throw new Error('File is not valid JSON.')
+  }
+  const email = str(raw?.email).trim().toLowerCase()
+  const fullName = str(raw?.fullName).trim()
+  if (!email || !fullName || !Array.isArray(raw.workExperiences) || !Array.isArray(raw.skills)) {
+    throw new Error('Not a CV Forge file: email, fullName, workExperiences or skills is missing.')
+  }
+  const now = new Date()
+  return {
+    email,
+    fullName,
+    occupation: str(raw.occupation),
+    phone: str(raw.phone),
+    city: str(raw.city),
+    about: str(raw.about),
+    skills: strList(raw.skills),
+    workExperiences: objList(raw.workExperiences).map(exp => ({
+      id: str(exp.id) || uuidv4(),
+      company: str(exp.company),
+      startMonth: str(exp.startMonth),
+      startYear: str(exp.startYear),
+      endMonth: str(exp.endMonth),
+      endYear: str(exp.endYear),
+      description: str(exp.description),
+      projects: objList(exp.projects).map(p => ({
+        id: str(p.id) || uuidv4(),
+        title: str(p.title),
+        description: str(p.description),
+        startMonth: str(p.startMonth),
+        startYear: str(p.startYear),
+        endMonth: str(p.endMonth),
+        endYear: str(p.endYear),
+        technologies: strList(p.technologies),
+      })),
+    })),
+    isArchived: false,
+    createdAt: now,
+    updatedAt: now,
+  }
 }
