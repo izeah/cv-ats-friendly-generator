@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Mail, Phone, MapPin, ArrowLeft, Download, Share2, ExternalLink,
-  Sparkles, Briefcase, Code2, FolderKanban, Calendar, CheckCircle2, Pencil
+  Sparkles, Briefcase, Code2, FolderKanban, Calendar, CheckCircle2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getCVBySlug, type CVData } from '@/lib/db'
@@ -81,8 +81,8 @@ export default function CVPreview() {
             This CV doesn't exist or hasn't been generated yet.
             The data is stored locally in your browser.
           </p>
-          <Button variant="outline" onClick={() => navigate('/')}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
+          <Button variant="outline" onClick={handleEdit}>
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to edit
           </Button>
         </div>
       </div>
@@ -94,14 +94,9 @@ export default function CVPreview() {
       {/* Controls Bar */}
       <div className="sticky top-0 z-50 glass border-b border-border/40 no-print">
         <div className="max-w-[850px] mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-              <ArrowLeft className="w-4 h-4 mr-1" /> Home
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleEdit}>
-              <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
-            </Button>
-          </div>
+          <Button variant="ghost" size="sm" onClick={handleEdit}>
+            <ArrowLeft className="w-4 h-4 mr-1" /> Back to edit
+          </Button>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={shareLink}>
               {copied ? <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-success" /> : <Share2 className="w-3.5 h-3.5 mr-1" />}
@@ -286,13 +281,13 @@ export default function CVPreview() {
         {/* Mobile Bottom Actions */}
         <div className="fixed bottom-0 left-0 right-0 glass border-t border-border/40 p-3 sm:hidden no-print">
           <div className="flex gap-2 max-w-[850px] mx-auto">
-            <Button variant="outline" size="default" className="flex-1" onClick={handleEdit}>
-              <Pencil className="w-4 h-4 mr-1" /> Edit
+            <Button variant="outline" size="default" className="flex-1 px-3" onClick={handleEdit}>
+              <ArrowLeft className="w-4 h-4 mr-1" /> Back to edit
             </Button>
-            <Button variant="outline" size="default" className="flex-1" onClick={shareLink}>
+            <Button variant="outline" size="default" className="flex-1 px-3" onClick={shareLink}>
               <Share2 className="w-4 h-4 mr-1" />{copied ? 'Copied!' : 'Share'}
             </Button>
-            <Button variant="gradient" size="default" className="flex-1" onClick={exportToPDF} disabled={exporting}>
+            <Button variant="gradient" size="default" className="flex-1 px-3" onClick={exportToPDF} disabled={exporting}>
               <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'PDF'}
             </Button>
           </div>
