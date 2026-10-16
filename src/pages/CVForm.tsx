@@ -66,7 +66,7 @@ const YEARS = Array.from({ length: 30 }, (_, i) =>
 );
 
 const SELECT_CLASS =
-    "h-10 w-full rounded-lg border border-border bg-input px-2 py-2 text-sm text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary";
+    "h-11 w-full rounded-full border border-foreground/35 bg-input px-3 py-2 text-sm font-medium text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-foreground/25 focus:border-foreground cursor-pointer";
 
 function createEmptyProject(): Project {
     return {
@@ -145,14 +145,14 @@ function ProjectForm({
     };
 
     return (
-        <div className="relative border border-border/50 rounded-lg bg-muted/30 overflow-hidden animate-scale-in">
+        <div className="relative border border-forest/30 rounded-3xl bg-background/50 overflow-hidden animate-scale-in">
             <div
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-secondary/50 transition-colors"
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
                 <div className="flex items-center gap-2 min-w-0">
                     <FolderKanban className="w-4 h-4 text-primary/70 shrink-0" />
-                    <span className="text-sm font-medium text-foreground/80 truncate">
+                    <span className="text-sm font-bold text-foreground truncate">
                         {project.title || `Project #${projectIndex + 1}`}
                         {!project.title && project.description && (
                             <span className="text-muted-foreground ml-1">
@@ -315,7 +315,7 @@ function ProjectForm({
                                     <Badge
                                         key={tech}
                                         variant="default"
-                                        className="cursor-pointer hover:bg-destructive/20 hover:text-destructive hover:border-destructive/30 transition-colors"
+                                        className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors"
                                         onClick={() => removeTech(tech)}
                                     >
                                         {tech} ×
@@ -382,17 +382,17 @@ function ExperienceForm({
     };
 
     return (
-        <Card className="border-border/60 bg-card/50 overflow-hidden animate-slide-up hover:border-primary/20 transition-colors duration-300">
+        <Card className="overflow-hidden animate-slide-up">
             <div
-                className="flex items-center justify-between p-4 sm:p-5 cursor-pointer hover:bg-muted/30 transition-colors"
+                className="flex items-center justify-between p-5 sm:p-7 cursor-pointer hover:bg-secondary/40 transition-colors"
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/10 shrink-0">
-                        <Briefcase className="w-4 h-4 text-primary" />
+                    <div className="w-10 h-10 rounded-full bg-marigold flex items-center justify-center border border-foreground shrink-0">
+                        <Briefcase className="w-4 h-4" strokeWidth={1.75} />
                     </div>
                     <div className="min-w-0">
-                        <span className="font-semibold text-foreground text-sm truncate block">
+                        <span className="font-display text-xl font-bold uppercase tracking-[-0.02em] leading-tight text-foreground truncate block">
                             {experience.company ||
                                 `Experience #${expIndex + 1}`}
                         </span>
@@ -427,7 +427,7 @@ function ExperienceForm({
 
             {!isCollapsed && (
                 <CardContent className="space-y-5 animate-slide-down">
-                    <Separator className="bg-border/50" />
+                    <Separator className="bg-forest/15" />
 
                     <div>
                         <Label htmlFor={`company-${expIndex}`}>
@@ -440,7 +440,7 @@ function ExperienceForm({
                                 onUpdate(expIndex, "company", e.target.value)
                             }
                             placeholder="e.g., PT Tokopedia, Freelance — Acme Corp"
-                            className="mt-1.5 bg-muted/50"
+                            className="mt-1.5"
                         />
                     </div>
 
@@ -556,7 +556,7 @@ function ExperienceForm({
                         />
                     </div>
 
-                    <Separator className="bg-border/50" />
+                    <Separator className="bg-forest/15" />
 
                     <div>
                         <div className="flex items-center justify-between mb-3">
@@ -778,7 +778,7 @@ export default function CVForm() {
     }, [fullName, email, phone, city, about, workExperiences, skills]);
 
     return (
-        <div className="flex min-h-screen noise-bg">
+        <div className="flex min-h-screen">
             <Sidebar
                 currentEmail={email}
                 onSelectCV={handleSidebarSelect}
@@ -795,21 +795,21 @@ export default function CVForm() {
 
             <div className="flex-1 min-w-0">
                 {/* Header */}
-                <header className="sticky top-0 z-50 glass border-b border-border/40">
-                    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="pl-10 lg:pl-0">
-                                <h2 className="text-sm font-semibold">
+                <header className="sticky top-0 z-50 glass border-b border-forest/15">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="pl-12 lg:pl-0 min-w-0">
+                                <h2 className="font-display text-xl font-bold uppercase leading-none">
                                     {email ? "Edit CV" : "New CV"}
                                 </h2>
                                 {email && (
-                                    <p className="text-[10px] text-muted-foreground">
+                                    <p className="text-[11px] text-muted-foreground mt-1 truncate">
                                         {email}
                                     </p>
                                 )}
                             </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 shrink-0">
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -819,7 +819,7 @@ export default function CVForm() {
                                 <Save className="w-3.5 h-3.5 mr-1" /> Save
                             </Button>
                             <Button
-                                variant="gradient"
+                               
                                 size="sm"
                                 onClick={() => handleSave(true)}
                                 disabled={saving}
@@ -832,10 +832,12 @@ export default function CVForm() {
 
                 <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6 relative z-10">
                     {/* Personal Info */}
-                    <Card className="border-border/60 overflow-hidden">
-                        <CardHeader className="bg-gradient-to-r from-muted/50 to-transparent py-4">
-                            <CardTitle className="flex items-center gap-2 text-base">
-                                <User className="w-4 h-4 text-primary" />{" "}
+                    <Card className="overflow-hidden">
+                        <CardHeader className="pb-5">
+                            <CardTitle className="flex items-center gap-3">
+                                <span className="w-10 h-10 rounded-full bg-marigold border border-foreground flex items-center justify-center shrink-0">
+                                    <User className="w-4 h-4" strokeWidth={1.75} />
+                                </span>
                                 Personal Information
                             </CardTitle>
                             <CardDescription className="text-xs">
@@ -858,7 +860,7 @@ export default function CVForm() {
                                             setFullName(e.target.value)
                                         }
                                         placeholder="John Doe"
-                                        className="mt-1 bg-muted/50"
+                                        className="mt-1.5"
                                     />
                                 </div>
                                 <div>
@@ -875,7 +877,7 @@ export default function CVForm() {
                                             setOccupation(e.target.value)
                                         }
                                         placeholder="e.g., Backend Developer, Social Media Strategist"
-                                        className="mt-1 bg-muted/50"
+                                        className="mt-1.5"
                                     />
                                 </div>
                                 <div>
@@ -893,7 +895,7 @@ export default function CVForm() {
                                             setEmail(e.target.value)
                                         }
                                         placeholder="john@example.com"
-                                        className="mt-1 bg-muted/50"
+                                        className="mt-1.5"
                                     />
                                 </div>
                                 <div>
@@ -910,7 +912,7 @@ export default function CVForm() {
                                             setPhone(e.target.value)
                                         }
                                         placeholder="+62 812-3456-7890"
-                                        className="mt-1 bg-muted/50"
+                                        className="mt-1.5"
                                     />
                                 </div>
                                 <div>
@@ -927,7 +929,7 @@ export default function CVForm() {
                                             setCity(e.target.value)
                                         }
                                         placeholder="Jakarta, Indonesia"
-                                        className="mt-1 bg-muted/50"
+                                        className="mt-1.5"
                                     />
                                 </div>
                             </div>
@@ -935,10 +937,12 @@ export default function CVForm() {
                     </Card>
 
                     {/* About */}
-                    <Card className="border-border/60 overflow-hidden">
-                        <CardHeader className="bg-gradient-to-r from-muted/50 to-transparent py-4">
-                            <CardTitle className="flex items-center gap-2 text-base">
-                                <FileText className="w-4 h-4 text-primary" />{" "}
+                    <Card className="overflow-hidden">
+                        <CardHeader className="pb-5">
+                            <CardTitle className="flex items-center gap-3">
+                                <span className="w-10 h-10 rounded-full bg-marigold border border-foreground flex items-center justify-center shrink-0">
+                                    <FileText className="w-4 h-4" strokeWidth={1.75} />
+                                </span>
                                 About
                             </CardTitle>
                             <CardDescription className="text-xs">
@@ -966,11 +970,13 @@ export default function CVForm() {
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-base font-semibold flex items-center gap-2">
-                                    <Briefcase className="w-4 h-4 text-primary" />{" "}
+                                <h2 className="font-display text-2xl font-bold uppercase tracking-[-0.03em] leading-none flex items-center gap-3">
+                                    <span className="w-10 h-10 rounded-full bg-marigold border border-foreground flex items-center justify-center shrink-0">
+                                        <Briefcase className="w-4 h-4" strokeWidth={1.75} />
+                                    </span>
                                     Work Experience
                                 </h2>
-                                <p className="text-xs text-muted-foreground mt-0.5">
+                                <p className="text-xs text-muted-foreground mt-2">
                                     Add your professional experience with
                                     detailed project breakdowns
                                 </p>
@@ -999,10 +1005,12 @@ export default function CVForm() {
                     </div>
 
                     {/* Skills */}
-                    <Card className="border-border/60 overflow-hidden">
-                        <CardHeader className="bg-gradient-to-r from-muted/50 to-transparent py-4">
-                            <CardTitle className="flex items-center gap-2 text-base">
-                                <Code2 className="w-4 h-4 text-primary" />{" "}
+                    <Card className="overflow-hidden">
+                        <CardHeader className="pb-5">
+                            <CardTitle className="flex items-center gap-3">
+                                <span className="w-10 h-10 rounded-full bg-marigold border border-foreground flex items-center justify-center shrink-0">
+                                    <Code2 className="w-4 h-4" strokeWidth={1.75} />
+                                </span>
                                 Technical Skills
                             </CardTitle>
                             <CardDescription className="text-xs">
@@ -1035,7 +1043,7 @@ export default function CVForm() {
                                         <Badge
                                             key={skill}
                                             variant="default"
-                                            className="px-3 py-1 text-sm cursor-pointer hover:bg-destructive/20 hover:text-destructive hover:border-destructive/30 transition-colors"
+                                            className="px-3 py-1 text-sm cursor-pointer hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors"
                                             onClick={() => removeSkill(skill)}
                                         >
                                             <Code2 className="w-3 h-3 mr-1" />
@@ -1060,7 +1068,7 @@ export default function CVForm() {
                             {saving ? "Saving..." : "Save Draft"}
                         </Button>
                         <Button
-                            variant="gradient"
+                           
                             size="lg"
                             className="flex-1"
                             onClick={() => handleSave(true)}
