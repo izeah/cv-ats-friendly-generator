@@ -4,7 +4,7 @@ import {
   Gift, UserRoundX, ArrowRight, Download, Braces, Share2, ChevronRight, ChevronDown, Check, Archive, Briefcase, FilePlus2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { getAllCVs, type CVData } from '@/lib/db'
+import type { CVData } from '@/lib/db'
 import { cn, generateSlug } from '@/lib/utils'
 import { rich, useI18n, usePageMeta } from '@/lib/i18n'
 import { PipelineDiagram, StepFlow } from '@/components/FlowDiagrams'
@@ -77,7 +77,8 @@ export default function Landing() {
   }, [hash])
 
   useEffect(() => {
-    getAllCVs().then(cvs => setRecentCVs(cvs.slice(0, 5)))
+    // Dynamic so Dexie stays out of the landing's first load.
+    import('@/lib/db').then(({ getAllCVs }) => getAllCVs()).then(cvs => setRecentCVs(cvs.slice(0, 5)))
   }, [])
 
   return (
