@@ -14,9 +14,7 @@ export default function Legal({ doc }: { doc: 'privacy' | 'terms' }) {
       <main className="flex-1 max-w-3xl w-full mx-auto px-5 sm:px-10 py-14 sm:py-20">
         <div className="relative">
           <CVSheet className="absolute -top-4 right-0 w-14 text-forest animate-bob hidden sm:block" />
-          <p className="inline-flex items-center gap-2 rounded-full border border-foreground px-3 py-1 text-xs font-bold uppercase tracking-wider mb-5">
-            <span className="w-2 h-2 rounded-full bg-fern" /> {t.legal.updated}
-          </p>
+          <p className="text-sm font-bold text-muted-foreground mb-4">{t.legal.updated}</p>
           <h1 className="font-display font-bold uppercase text-5xl sm:text-6xl leading-[0.9] tracking-[-0.03em]">
             {page.title}
           </h1>

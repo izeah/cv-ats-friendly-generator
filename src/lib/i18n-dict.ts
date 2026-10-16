@@ -49,9 +49,10 @@ export const en = {
     logoAlt: 'CV ATS Friendly Builder logo',
     freeNoSignup: 'Free · No sign-up',
   },
-  nav: { features: 'Features', how: 'How it works', faq: 'FAQ' },
+  nav: { features: 'Features', how: 'How it works', testimonials: 'Stories', faq: 'FAQ', open: 'Open menu', close: 'Close menu' },
   hero: {
-    badge: 'Free · No sign-up',
+    badgeFree: 'Free',
+    badgeNoSignup: 'No sign-up',
     titleA: 'Build a CV',
     titleB: 'that gets you',
     titleC: 'hired.',
@@ -71,7 +72,6 @@ export const en = {
     experience: 'Experience',
   },
   features: {
-    eyebrow: 'Features',
     titleA: 'Everything you need',
     titleB: 'to stand out',
     lead: 'Purpose-built for Backend Developers who want to leave a lasting impression on recruiters and hiring managers.',
@@ -85,7 +85,6 @@ export const en = {
     ],
   },
   how: {
-    eyebrow: 'How it works',
     titleA: 'From form to',
     titleB: 'finished CV',
     lead: 'Everything you type flows through one formatter and comes out ready for a recruiter — as a PDF, a share link, or a JSON backup.',
@@ -111,12 +110,11 @@ export const en = {
     pdf: { label: 'Animation: downloading a CV as a PDF', button: 'Download PDF' },
     backend: { label: 'Animation: a terminal starting a backend service', lines: ['$ go run ./cmd/api', '› kafka consumer ready', '✓ listening on :8080'] },
     instant: { label: 'Animation: a form instantly turning into a CV', badge: 'Instant' },
-    privacy: { label: 'Animation: CV data staying inside the browser, never uploaded', browser: 'Your browser', noUpload: 'No upload' },
-    backup: { label: 'Animation: a JSON backup moving from a laptop to a phone', restored: 'Restored' },
+    privacy: { label: 'Animation: CV data staying inside the browser while the cloud is crossed out', browser: 'Your browser', offline: 'Stays offline' },
+    backup: { label: 'Animation: a CV backed up to JSON on one device and imported on the other, back and forth', backup: 'Backup', import: 'Import', restored: 'Restored' },
   },
   sharing: {
-    eyebrow: 'Sharing',
-    titleA: 'Ready the moment',
+    titleA: 'Ready when',
     titleB: 'a recruiter asks',
     items: [
       { title: 'Share as a link', text: 'One link carries your CV — the recipient can view it and download the PDF.' },
@@ -162,6 +160,63 @@ export const en = {
       ],
     ] as { from: 'them' | 'me'; text: string; file?: string }[][],
   },
+  testimonials: {
+    titleA: 'Fewer rejections,',
+    titleB: 'more callbacks',
+    lead: 'What happens when a CV is finally easy to read — for the ATS and for the person in HR.',
+    note: 'Illustrative stories — names and details are examples, not real users.',
+    us: 'CV ATS Friendly Builder',
+    label: 'Animated stories of job seekers getting callbacks after rebuilding their CV',
+    pick: 'Show story from {name}',
+    items: [
+      {
+        name: 'Nadia Putri', initials: 'NP', role: 'Backend Developer · Bandung', outcome: 'Hired · Backend Engineer at a fintech', reaction: '🎉',
+        messages: [
+          { from: 'them', text: 'hey, can I share something with you? 🥹' },
+          { from: 'them', text: 'my old CV was a two-column Canva template, sent ~30 applications and heard nothing' },
+          { from: 'them', text: 'switched to the format from here and got 3 interview calls the next week' },
+          { from: 'them', text: 'and HR just called. I got the job 😭🙏' },
+          { from: 'us', text: 'Nadia!! congratulations, so happy for you' },
+        ],
+      },
+      {
+        name: 'Raka Pratama', initials: 'RP', role: 'Fresh graduate · Yogyakarta', outcome: 'Hired · Junior Backend Engineer', reaction: '😂',
+        messages: [
+          { from: 'them', text: "honestly I wasn't sure at first, I'm a fresh grad with just one internship" },
+          { from: 'them', text: 'but the projects section made that internship actually look like something' },
+          { from: 'them', text: 'HR said my CV was the easiest to read out of all the candidates lol' },
+          { from: 'us', text: "That's your projects doing the talking. Congrats Raka!" },
+        ],
+      },
+      {
+        name: 'Sinta Maharani', initials: 'SM', role: 'QA → Backend · Jakarta', outcome: 'Career switch · Backend Developer', reaction: '👏',
+        messages: [
+          { from: 'them', text: "I moved from QA to backend and was scared my CV wouldn't feel relevant" },
+          { from: 'them', text: 'so I rewrote every project: the problem, what I built, what changed after' },
+          { from: 'them', text: 'in the user interview they asked straight away about the Kafka project I wrote. felt like someone actually read it' },
+          { from: 'us', text: 'Love this. Career switch: done.' },
+        ],
+      },
+      {
+        name: 'Bima Santoso', initials: 'BS', role: 'Senior Engineer · Surabaya', outcome: '2 offers in one week', reaction: '🔥',
+        messages: [
+          { from: 'them', text: 'the share link is honestly so handy' },
+          { from: 'them', text: 'a recruiter asked for my CV while I was out, I sent the link and she grabbed the PDF right from her phone' },
+          { from: 'them', text: "got 2 offers this week and now I can't decide 😅" },
+          { from: 'us', text: 'Good problem to have. Congrats Bima!' },
+        ],
+      },
+      {
+        name: 'Laras Wijaya', initials: 'LW', role: 'Backend Developer · Bali (remote)', outcome: 'Hired · Remote Backend Engineer', reaction: '🥳',
+        messages: [
+          { from: 'them', text: 'my trick: keep one main CV, export the JSON, duplicate it for each role' },
+          { from: 'them', text: 'tweak the summary and the skill order, done in 5 minutes' },
+          { from: 'them', text: "finally landed the remote job I'd been chasing since last year" },
+          { from: 'us', text: 'Such a tidy workflow. Congrats Laras!' },
+        ],
+      },
+    ] as { name: string; initials: string; role: string; outcome: string; reaction: string; messages: { from: 'them' | 'us'; text: string }[] }[],
+  },
   stats: [
     { value: '0', label: 'Accounts needed' },
     { value: '100%', label: 'Stored in your browser' },
@@ -176,7 +231,6 @@ export const en = {
     emptyCta: 'Build your first CV',
   },
   faq: {
-    eyebrow: 'FAQ',
     titleA: 'Questions,',
     titleB: 'answered',
     lead: 'Still unsure? Everything about how your data and files are handled.',
@@ -418,9 +472,10 @@ export const id: Dict = {
     logoAlt: 'Logo CV ATS Friendly Builder',
     freeNoSignup: 'Gratis · Tanpa daftar',
   },
-  nav: { features: 'Fitur', how: 'Cara kerja', faq: 'FAQ' },
+  nav: { features: 'Fitur', how: 'Cara kerja', testimonials: 'Cerita', faq: 'FAQ', open: 'Buka menu', close: 'Tutup menu' },
   hero: {
-    badge: 'Gratis · Tanpa daftar',
+    badgeFree: 'Gratis',
+    badgeNoSignup: 'Tanpa daftar',
     titleA: 'Buat CV',
     titleB: 'yang bikin kamu',
     titleC: 'dilirik.',
@@ -440,7 +495,6 @@ export const id: Dict = {
     experience: 'Pengalaman',
   },
   features: {
-    eyebrow: 'Fitur',
     titleA: 'Semua yang kamu',
     titleB: 'butuhkan untuk menonjol',
     lead: 'Dirancang khusus untuk Backend Developer yang ingin meninggalkan kesan kuat pada recruiter dan hiring manager.',
@@ -454,7 +508,6 @@ export const id: Dict = {
     ],
   },
   how: {
-    eyebrow: 'Cara kerja',
     titleA: 'Dari formulir',
     titleB: 'jadi CV siap kirim',
     lead: 'Semua yang kamu ketik diproses satu formatter dan keluar siap untuk recruiter — sebagai PDF, link share, atau cadangan JSON.',
@@ -480,12 +533,11 @@ export const id: Dict = {
     pdf: { label: 'Animasi: mengunduh CV sebagai PDF', button: 'Unduh PDF' },
     backend: { label: 'Animasi: terminal menjalankan layanan backend', lines: ['$ go run ./cmd/api', '› kafka consumer siap', '✓ berjalan di :8080'] },
     instant: { label: 'Animasi: formulir langsung berubah menjadi CV', badge: 'Instan' },
-    privacy: { label: 'Animasi: data CV tetap di dalam browser, tidak pernah diunggah', browser: 'Browser kamu', noUpload: 'Tanpa unggah' },
-    backup: { label: 'Animasi: cadangan JSON berpindah dari laptop ke ponsel', restored: 'Dipulihkan' },
+    privacy: { label: 'Animasi: data CV tetap di dalam browser, cloud dicoret', browser: 'Browser kamu', offline: 'Tetap offline' },
+    backup: { label: 'Animasi: CV dicadangkan ke JSON di satu perangkat lalu diimpor di perangkat lain, bolak-balik', backup: 'Cadangkan', import: 'Impor', restored: 'Dipulihkan' },
   },
   sharing: {
-    eyebrow: 'Berbagi',
-    titleA: 'Siap kapan pun',
+    titleA: 'Siap saat',
     titleB: 'recruiter meminta',
     items: [
       { title: 'Bagikan lewat link', text: 'Satu link membawa CV kamu — penerima bisa melihat dan mengunduh PDF-nya.' },
@@ -531,6 +583,63 @@ export const id: Dict = {
       ],
     ],
   },
+  testimonials: {
+    titleA: 'Lebih jarang ditolak,',
+    titleB: 'lebih sering dipanggil',
+    lead: 'Begini jadinya kalau CV akhirnya mudah dibaca — oleh ATS dan oleh orang di HR.',
+    note: 'Cerita ilustrasi — nama dan detail hanya contoh, bukan pengguna asli.',
+    us: 'CV ATS Friendly Builder',
+    label: 'Cerita animasi pencari kerja yang mulai dipanggil interview setelah membuat ulang CV-nya',
+    pick: 'Tampilkan cerita {name}',
+    items: [
+      {
+        name: 'Nadia Putri', initials: 'NP', role: 'Backend Developer · Bandung', outcome: 'Diterima · Backend Engineer di fintech', reaction: '🎉',
+        messages: [
+          { from: 'them', text: 'kak, aku mau cerita dikit boleh? 🥹' },
+          { from: 'them', text: 'dulu CV-ku dua kolom pakai template canva, 30-an lamaran sepi semua' },
+          { from: 'them', text: 'ganti pakai format dari sini, minggu depannya langsung dipanggil 3 interview' },
+          { from: 'them', text: 'dan barusan HR-nya nelpon. aku keterima 😭🙏' },
+          { from: 'us', text: 'Nadia!! selamat yaa, ikut senang banget' },
+        ],
+      },
+      {
+        name: 'Raka Pratama', initials: 'RP', role: 'Fresh graduate · Yogyakarta', outcome: 'Diterima · Junior Backend Engineer', reaction: '😂',
+        messages: [
+          { from: 'them', text: 'jujur awalnya ragu, aku fresh grad dan pengalamannya cuma magang' },
+          { from: 'them', text: 'tapi bagian proyek bikin magangku kelihatan ada isinya' },
+          { from: 'them', text: 'HR-nya sampai bilang CV aku paling gampang dibaca dari semua kandidat wkwk' },
+          { from: 'us', text: 'Proyeknya yang bicara. Selamat, Raka!' },
+        ],
+      },
+      {
+        name: 'Sinta Maharani', initials: 'SM', role: 'QA → Backend · Jakarta', outcome: 'Pindah karier · Backend Developer', reaction: '👏',
+        messages: [
+          { from: 'them', text: 'aku pindah dari QA ke backend, takut banget CV-ku dianggap nggak relevan' },
+          { from: 'them', text: 'akhirnya tiap proyek kutulis ulang: masalahnya apa, aku bikin apa, hasilnya gimana' },
+          { from: 'them', text: 'pas user interview dia langsung nanya proyek Kafka yang kutulis. kerasa banget dibaca beneran' },
+          { from: 'us', text: 'Keren! Pindah kariernya berhasil.' },
+        ],
+      },
+      {
+        name: 'Bima Santoso', initials: 'BS', role: 'Senior Engineer · Surabaya', outcome: '2 tawaran dalam seminggu', reaction: '🔥',
+        messages: [
+          { from: 'them', text: 'fitur link share-nya kepake banget sih' },
+          { from: 'them', text: 'recruiter minta CV pas aku lagi di jalan, kukirim link-nya, dia buka di HP terus langsung unduh PDF-nya' },
+          { from: 'them', text: 'minggu ini dapat 2 tawaran, sekarang malah bingung milih 😅' },
+          { from: 'us', text: 'Bingung yang menyenangkan. Selamat, Bima!' },
+        ],
+      },
+      {
+        name: 'Laras Wijaya', initials: 'LW', role: 'Backend Developer · Bali (remote)', outcome: 'Diterima · Remote Backend Engineer', reaction: '🥳',
+        messages: [
+          { from: 'them', text: 'trik aku: simpan 1 CV utama, ekspor JSON-nya, duplikat untuk tiap posisi' },
+          { from: 'them', text: 'tinggal ganti ringkasan dan urutan skill, 5 menit beres' },
+          { from: 'them', text: 'akhirnya dapat kerja remote yang kuincar dari tahun lalu' },
+          { from: 'us', text: 'Alurnya rapi banget. Selamat, Laras!' },
+        ],
+      },
+    ],
+  },
   stats: [
     { value: '0', label: 'Akun yang dibutuhkan' },
     { value: '100%', label: 'Tersimpan di browser kamu' },
@@ -545,7 +654,6 @@ export const id: Dict = {
     emptyCta: 'Buat CV pertamamu',
   },
   faq: {
-    eyebrow: 'FAQ',
     titleA: 'Pertanyaan,',
     titleB: 'terjawab',
     lead: 'Masih ragu? Semua tentang cara data dan file kamu ditangani.',

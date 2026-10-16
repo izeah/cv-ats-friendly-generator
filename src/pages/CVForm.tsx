@@ -14,7 +14,7 @@ import {
     ChevronUp,
     FolderKanban,
     Calendar,
-    Sparkles,
+    FileCheck,
     Save,
     Eye,
     FileText,
@@ -991,7 +991,7 @@ export default function CVForm() {
                                 {savingMode === "preview" ? (
                                     <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" />
                                 ) : (
-                                    <Sparkles className="w-4 h-4" aria-hidden="true" />
+                                    <FileCheck className="w-4 h-4" aria-hidden="true" />
                                 )}
                                 {savingMode === "preview" ? f.building : f.previewBuild}
                             </Button>

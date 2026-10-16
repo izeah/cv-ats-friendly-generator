@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import {
-  Sparkles, ArrowRight, Download, Braces, Share2, ChevronRight, ChevronDown, Check, Archive, Briefcase, FilePlus2,
+  Gift, UserRoundX, ArrowRight, Download, Braces, Share2, ChevronRight, ChevronDown, Check, Archive, Briefcase, FilePlus2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getAllCVs, type CVData } from '@/lib/db'
@@ -12,8 +12,8 @@ import { HeroMockup, RecruiterChat } from '@/components/LandingAnimations'
 import {
   AtsVignette, BackendVignette, BackupVignette, InstantVignette, PdfVignette, PrivacyVignette,
 } from '@/components/Vignettes'
-import { LanguageSwitcher } from '@/components/Language'
-import { BrandLink, SiteFooter } from '@/components/SiteChrome'
+import { SiteFooter, SiteHeader } from '@/components/SiteChrome'
+import Testimonials from '@/components/Testimonials'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Cactus, SmallCactus, Cloud, Sun, CVSheet, QuestionBubbles, Balloon, Birds, Sparkle,
@@ -23,12 +23,9 @@ import {
 const FEATURE_SCENES = [AtsVignette, PdfVignette, BackendVignette, InstantVignette, PrivacyVignette, BackupVignette]
 const SHARING_ICONS = [Share2, Download, Braces, Archive]
 
-function SectionHeading({ eyebrow, title, children }: { eyebrow: string; title: React.ReactNode; children?: React.ReactNode }) {
+function SectionHeading({ title, children }: { title: React.ReactNode; children?: React.ReactNode }) {
   return (
     <div className="max-w-2xl mb-12 sm:mb-16">
-      <p className="inline-flex items-center gap-2 rounded-full border border-foreground px-3 py-1 text-xs font-bold uppercase tracking-wider mb-5">
-        <span className="w-2 h-2 rounded-full bg-fern" /> {eyebrow}
-      </p>
       <h2 className="font-display font-bold uppercase text-5xl sm:text-6xl leading-[0.9] tracking-[-0.03em]">
         {title}
       </h2>
@@ -69,9 +66,15 @@ function StickyCTA() {
 
 export default function Landing() {
   const navigate = useNavigate()
+  const { hash } = useLocation()
   const { t } = useI18n()
   const [recentCVs, setRecentCVs] = useState<CVData[] | null>(null)
   usePageMeta(t.meta.home)
+
+  // Arriving from another page via "/#faq": scroll once the section exists.
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView()
+  }, [hash])
 
   useEffect(() => {
     getAllCVs().then(cvs => setRecentCVs(cvs.slice(0, 5)))
@@ -79,31 +82,16 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen overflow-x-clip pb-20 md:pb-0">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 glass border-b border-forest/15">
-        <div className="max-w-[1200px] mx-auto px-5 sm:px-10 h-16 flex items-center justify-between gap-4">
-          <BrandLink />
-          <div className="hidden lg:flex items-center gap-8 text-sm font-bold">
-            <a href="#features" className="hover:underline underline-offset-4">{t.nav.features}</a>
-            <a href="#how" className="hover:underline underline-offset-4">{t.nav.how}</a>
-            <a href="#faq" className="hover:underline underline-offset-4">{t.nav.faq}</a>
-          </div>
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher compact className="sm:hidden" />
-            <LanguageSwitcher className="hidden sm:inline-flex" />
-            <Button size="sm" onClick={() => navigate('/create')} className="hidden sm:inline-flex">
-              {t.common.buildCV} <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* Hero */}
       <section id="top" className="max-w-[1200px] mx-auto px-5 sm:px-10 pt-10 sm:pt-20 pb-20 sm:pb-28">
         <div className="grid lg:grid-cols-[1.1fr_1fr] gap-16 lg:gap-12 items-center">
           <div className="animate-fade-in">
             <p className="inline-flex items-center gap-2 rounded-full bg-forest text-cream px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider mb-6 sm:mb-7">
-              <Sparkles className="w-3.5 h-3.5 text-marigold" aria-hidden="true" /> {t.hero.badge}
+              <Gift className="w-3.5 h-3.5 text-marigold" aria-hidden="true" /> {t.hero.badgeFree}
+              <span className="text-cream/40" aria-hidden="true">·</span>
+              <UserRoundX className="w-3.5 h-3.5 text-marigold" aria-hidden="true" /> {t.hero.badgeNoSignup}
             </p>
             <h1 className="isolate font-display font-bold uppercase text-[52px] sm:text-[88px] lg:text-[104px] leading-[0.86] tracking-[-0.03em]">
               {t.hero.titleA}<br />{t.hero.titleB}{' '}
@@ -143,7 +131,7 @@ export default function Landing() {
       <section id="features" className="relative scroll-mt-20 max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
         <Balloon className="absolute top-16 right-6 sm:right-16 w-14 sm:w-20 text-forest animate-bob" />
         <Cloud className="absolute top-40 right-32 w-24 text-forest animate-drift [animation-delay:-4s] hidden md:block" />
-        <SectionHeading eyebrow={t.features.eyebrow} title={<>{t.features.titleA}<br />{t.features.titleB}</>}>
+        <SectionHeading title={<>{t.features.titleA}<br />{t.features.titleB}</>}>
           {t.features.lead}
         </SectionHeading>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -174,7 +162,7 @@ export default function Landing() {
           <CVSheet className="absolute top-36 right-40 w-12 text-forest animate-bob [animation-delay:-2s] hidden lg:block" />
           <Sparkle className="twinkle absolute top-[46%] left-[8%] w-6 text-forest hidden md:block" />
           <Sparkle className="twinkle absolute bottom-[38%] right-[9%] w-5 text-forest [animation-delay:-1.2s] hidden md:block" />
-          <SectionHeading eyebrow={t.how.eyebrow} title={<>{t.how.titleA}<br />{t.how.titleB}</>}>
+          <SectionHeading title={<>{t.how.titleA}<br />{t.how.titleB}</>}>
             {t.how.lead}
           </SectionHeading>
           <PipelineDiagram />
@@ -188,7 +176,7 @@ export default function Landing() {
       <section className="max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div>
-            <SectionHeading eyebrow={t.sharing.eyebrow} title={<>{t.sharing.titleA}<br />{t.sharing.titleB}</>} />
+            <SectionHeading title={<>{t.sharing.titleA}<br />{t.sharing.titleB}</>} />
             <ul className="space-y-7 -mt-4">
               {t.sharing.items.map((item, i) => {
                 const Icon = SHARING_ICONS[i]
@@ -225,8 +213,13 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section id="stories" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
+        <Testimonials />
+      </section>
+
       {/* Saved CVs: skeleton → list or empty state */}
-      <section className="max-w-[1200px] mx-auto px-5 sm:px-10 pt-20 sm:pt-28" aria-busy={recentCVs === null}>
+      <section className="max-w-[1200px] mx-auto px-5 sm:px-10" aria-busy={recentCVs === null}>
         <h2 className="font-display text-4xl font-bold uppercase tracking-[-0.03em] mb-8 flex items-center gap-3">
           <Briefcase className="w-7 h-7" strokeWidth={1.75} aria-hidden="true" /> {t.saved.title}
         </h2>
@@ -285,7 +278,7 @@ export default function Landing() {
       <section id="faq" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
         <div className="grid lg:grid-cols-[1fr_1.6fr] gap-10 lg:gap-16">
           <div className="lg:sticky lg:top-28 self-start">
-            <SectionHeading eyebrow={t.faq.eyebrow} title={<>{t.faq.titleA}<br />{t.faq.titleB}</>}>
+            <SectionHeading title={<>{t.faq.titleA}<br />{t.faq.titleB}</>}>
               {t.faq.lead}
             </SectionHeading>
             <QuestionBubbles className="w-36 sm:w-44 text-forest -mt-4 animate-bob" />

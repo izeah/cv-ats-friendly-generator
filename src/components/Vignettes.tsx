@@ -89,16 +89,16 @@ function Cursor({ style }: { style: CSSProperties }) {
     );
 }
 
-function Chevrons({ x, y, visible }: { x: number; y: number; visible: boolean }) {
+function Chevrons({ x, y, visible, count = 3 }: { x: number; y: number; visible: boolean; count?: number }) {
     return (
         <g style={{ opacity: visible ? 1 : 0, transition: "opacity .3s" }}>
-            {[0, 1, 2].map((i) => (
+            {Array.from({ length: count }, (_, i) => (
                 <path
                     key={i}
                     d={`M${x + i * 9} ${y - 5}l5 5-5 5`}
                     className="chev stroke-forest"
                     {...line}
-                    style={{ animationDelay: `${i * 0.2}s` }}
+                    style={{ animationDelay: `${(i * 0.2) % 1.2}s` }}
                 />
             ))}
         </g>
@@ -106,12 +106,25 @@ function Chevrons({ x, y, visible }: { x: number; y: number; visible: boolean })
 }
 
 /** Frame + 8s clock. `render` gets on(n): true from step n until the loop resets. */
-function Vignette({ label, offset = 0, render, className }: { label: string; offset?: number; render: (on: On, step: number) => ReactNode; className?: string }) {
+function Vignette({
+    label,
+    offset = 0,
+    steps = STEPS,
+    render,
+    className,
+}: {
+    label: string;
+    offset?: number;
+    steps?: number;
+    render: (on: On, step: number) => ReactNode;
+    className?: string;
+}) {
     const [ref, inView] = useInView<HTMLDivElement>(0.2);
     const reduced = prefersReducedMotion();
-    const tick = useLoop(STEPS, 500, inView && !reduced);
-    const step = reduced ? LAST - 1 : (tick + offset) % STEPS;
-    const on: On = (n) => step >= n && step < LAST;
+    const last = steps - 1;
+    const tick = useLoop(steps, 500, inView && !reduced);
+    const step = reduced ? last - 1 : (tick + offset) % steps;
+    const on: On = (n) => step >= n && step < last;
     return (
         <div
             ref={ref}
@@ -432,7 +445,8 @@ export function InstantVignette({ offset }: { offset?: number }) {
                             </g>
                         ))}
                     </g>
-                    <Chevrons x={108} y={80} visible={on(2)} />
+                    {/* Chevrons run all the way to the CV sheet; the bolt sits on top of them. */}
+                    <Chevrons x={106} y={80} count={8} visible={on(2)} />
                     <g style={pop(on(3))}>
                         <path d="M148 52l-16 30h12l-6 24 20-32h-12l8-22z" className="fill-marigold stroke-forest" {...line} />
                     </g>
@@ -487,18 +501,21 @@ export function PrivacyVignette({ offset }: { offset?: number }) {
                             })}
                         </g>
                     </g>
+                    {/* A cloud appears, then gets struck through: the CV never goes online. */}
                     <g style={rise(on(4))}>
-                        <path d="M222 84c-8 0-8-11 0-11 0-9 12-12 17-5 3-8 17-8 19 1 8-1 11 8 4 12 5 1 4 3 0 3z" className="fill-white stroke-forest" {...line} />
+                        <path
+                            d="M214 88c-10 0-10-14 0-14 0-11 14-15 21-6 3-10 20-10 23 1 10-2 14 10 5 15 6 1 5 4 0 4z"
+                            className="fill-white stroke-forest"
+                            {...line}
+                            style={{ opacity: on(6) ? 0.45 : 1, transition: "opacity .5s" }}
+                        />
                     </g>
-                    <path d="M190 78h28" className="stroke-forest" strokeDasharray="3 3" strokeOpacity={0.6} strokeWidth={1.5} style={{ opacity: on(5) ? 1 : 0, transition: "opacity .4s" }} />
+                    <path d="M208 98L268 58" pathLength={1} className="stroke-marigold" strokeWidth={7} strokeLinecap="round" style={draw(on(5))} />
+                    <path d="M208 98L268 58" pathLength={1} className="stroke-forest" strokeWidth={2.5} strokeLinecap="round" style={draw(on(5))} />
                     <g style={pop(on(6))}>
-                        <circle cx={204} cy={78} r={8} className="fill-marigold stroke-forest" strokeWidth={1.2} />
-                        <path d="M200.5 74.5l7 7m0-7l-7 7" className="stroke-forest" {...line} />
+                        <Pill x={202} y={110} w={68} text={v.offline} />
                     </g>
                     <g style={pop(on(7))}>
-                        <Pill x={198} y={96} w={70} text={v.noUpload} />
-                    </g>
-                    <g style={pop(on(8))}>
                         <circle cx={182} cy={24} r={10} className="fill-forest" />
                         <rect x={177} y={23} width={10} height={7} rx={1.5} className="fill-cream" />
                         <path d="M179 23v-2.5a3 3 0 0 1 6 0V23" className="stroke-cream" strokeWidth={1.4} />
@@ -509,47 +526,70 @@ export function PrivacyVignette({ offset }: { offset?: number }) {
     );
 }
 
+/** Mini CV lines shown on a device screen once it holds the CV. */
+function ScreenCV({ x, y, w, visible }: { x: number; y: number; w: number; visible: boolean }) {
+    return (
+        <g style={{ opacity: visible ? 1 : 0, transition: "opacity .4s" }}>
+            <circle cx={x + 5} cy={y + 5} r={4} className="fill-marigold stroke-forest" strokeWidth={1} />
+            <rect x={x + 13} y={y + 2.5} width={w - 15} height={4} rx={2} className="fill-forest" style={grow(visible ? 1 : 0)} />
+            {[0.9, 0.7, 0.8].map((f, i) => (
+                <rect key={i} x={x} y={y + 15 + i * 7} width={w * f} height={3} rx={1.5} className="fill-forest" opacity={0.25} style={grow(visible ? 1 : 0)} />
+            ))}
+        </g>
+    );
+}
+
+// Back and forth: laptop → JSON → phone, then phone → JSON → laptop. 28 steps = 14s.
+const BACKUP_HALF = 14;
+
 export function BackupVignette({ offset }: { offset?: number }) {
     const v = useI18n().t.vignettes.backup;
     return (
         <Vignette
             label={v.label}
             offset={offset}
-            render={(on, step) => {
-                const spots = [
-                    [51, 58],
-                    [128, 6],
-                    [218, 52],
-                ];
-                const at = step >= 6 ? 2 : step >= 5 ? 1 : 0;
+            steps={BACKUP_HALF * 2}
+            render={(_on, step) => {
+                const toPhone = step < BACKUP_HALF;
+                const s = step % BACKUP_HALF;
+                const laptop = { file: [52, 54], pill: [22, 124] };
+                const phone = { file: [219, 54], pill: [190, 134] };
+                const from = toPhone ? laptop : phone;
+                const to = toPhone ? phone : laptop;
+                const filePos = s < 4 ? from.file : s < 5 ? [128, 2] : to.file;
+                const fileVisible = s >= 2 && s < 7;
+                const laptopHasCV = toPhone || s >= 7;
+                const phoneHasCV = !toPhone || s >= 7;
                 return (
                     <>
-                        <g style={rise(on(1))}>
-                            <rect x={22} y={46} width={84} height={56} rx={6} className="fill-parchment stroke-forest" strokeWidth={1.5} />
-                            <path d="M12 106h104l-7 9H19z" className="fill-sage stroke-forest" {...line} />
-                        </g>
-                        <g style={rise(on(2))}>
-                            <rect x={206} y={32} width={52} height={96} rx={10} className="fill-parchment stroke-forest" strokeWidth={1.5} />
-                            <line x1={224} y1={40} x2={240} y2={40} className="stroke-forest" strokeWidth={2} strokeLinecap="round" />
-                        </g>
+                        <rect x={20} y={44} width={88} height={58} rx={6} className="fill-parchment stroke-forest" strokeWidth={1.5} />
+                        <path d="M10 106h108l-7 9H17z" className="fill-sage stroke-forest" {...line} />
+                        <ScreenCV x={32} y={56} w={64} visible={laptopHasCV} />
+                        <rect x={206} y={28} width={52} height={100} rx={10} className="fill-parchment stroke-forest" strokeWidth={1.5} />
+                        <line x1={224} y1={36} x2={240} y2={36} className="stroke-forest" strokeWidth={2} strokeLinecap="round" />
+                        <ScreenCV x={214} y={50} w={36} visible={phoneHasCV} />
                         <path
-                            d="M64 46C100-6 196-6 232 30"
-                            pathLength={1}
+                            d="M64 44C100-8 196-8 232 26"
                             className="stroke-forest"
                             strokeOpacity={0.35}
                             strokeWidth={1.5}
-                            strokeLinecap="round"
-                            style={draw(on(3))}
+                            strokeDasharray="3 5"
+                            style={{ opacity: s >= 2 && s < 8 ? 1 : 0, transition: "opacity .4s" }}
                         />
-                        <g style={move(spots[at][0], spots[at][1], on(4))}>
-                            <path d="M0 0h18l8 8v24H0z" className="fill-marigold stroke-forest" {...line} />
-                            <text x={12} y={23} textAnchor="middle" fontSize={9} fontWeight={800} className="fill-forest">{"{ }"}</text>
+                        <g style={move(filePos[0], filePos[1], fileVisible)}>
+                            <g style={{ transform: s === 6 ? "scale(.6)" : "scale(1)", transformBox: "fill-box", transformOrigin: "center", transition: "transform .4s" }}>
+                                <path d="M0 0h18l8 8v24H0z" className="fill-marigold stroke-forest" {...line} />
+                                <text x={12} y={23} textAnchor="middle" fontSize={9} fontWeight={800} className="fill-forest">{"{ }"}</text>
+                            </g>
                         </g>
-                        <g style={pop(on(7))}>
-                            <Check cx={254} cy={34} r={7} />
+                        <g style={pop(s >= 1 && s < 5)}>
+                            <Pill x={from.pill[0]} y={from.pill[1]} w={84} text={`${v.backup} → JSON`} dark={false} />
                         </g>
-                        <g style={pop(on(7))}>
-                            <Pill x={196} y={136} w={72} text={`${v.restored} ✓`} />
+                        <g style={pop(s >= 6 && s < 9)}>
+                            <Pill x={to.pill[0]} y={to.pill[1]} w={74} text={`JSON → ${v.import}`} dark={false} />
+                        </g>
+                        <g style={pop(s >= 9 && s < 13)}>
+                            <Pill x={to.pill[0]} y={to.pill[1]} w={74} text={`${v.restored} ✓`} />
                         </g>
                     </>
                 );
