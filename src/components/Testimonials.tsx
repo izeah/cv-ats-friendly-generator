@@ -1,7 +1,6 @@
 // Testimonials as DM threads: messages type in one by one, the reply gets a
-// reaction, an outcome stamp lands, then the next story starts. The stories are
-// illustrative and labelled as such in the UI (see t.testimonials.note).
-import { useEffect, useState } from "react";
+// reaction, an outcome stamp lands, then the next story starts.
+import { useEffect, useRef, useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import { cn, prefersReducedMotion } from "@/lib/utils";
 import { fill, useI18n } from "@/lib/i18n";
@@ -24,6 +23,17 @@ function TypingDots({ dark }: { dark?: boolean }) {
     );
 }
 
+/** Scrolls a horizontal list so its i-th item sits in the middle (no-op when the list doesn't scroll). */
+function centerItem(list: HTMLElement | null, i: number, smooth: boolean) {
+    const item = list?.children[i] as HTMLElement | undefined;
+    if (!list || !item) return;
+    const offset = item.getBoundingClientRect().left - list.getBoundingClientRect().left;
+    list.scrollTo({
+        left: list.scrollLeft + offset - (list.clientWidth - item.offsetWidth) / 2,
+        behavior: smooth ? "smooth" : "auto",
+    });
+}
+
 export default function Testimonials() {
     const { t } = useI18n();
     const tm = t.testimonials;
@@ -38,6 +48,15 @@ export default function Testimonials() {
     const [leaving, setLeaving] = useState(false);
     const next = story.messages[shown];
     const lastThem = story.messages.map((m) => m.from).lastIndexOf("them");
+    const listRef = useRef<HTMLUListElement>(null);
+    const settle = useRef(0);
+
+    // Mobile: the people row follows the active story, and glides back to it once the user stops scrolling.
+    useEffect(() => centerItem(listRef.current, idx, !reduced), [idx, reduced]);
+    const onListScroll = () => {
+        clearTimeout(settle.current);
+        settle.current = window.setTimeout(() => centerItem(listRef.current, idx, !reduced), 700);
+    };
 
     const select = (i: number) => {
         setIdx(i);
@@ -83,13 +102,16 @@ export default function Testimonials() {
                     {tm.titleB}
                 </h2>
                 <p className="mt-5 text-lg text-muted-foreground leading-relaxed max-w-md">{tm.lead}</p>
-                <p className="mt-3 text-xs font-bold text-muted-foreground">{tm.note}</p>
 
-                <ul className="mt-8 flex lg:flex-col gap-3 overflow-x-auto snap-x pb-2 -mx-5 px-5 sm:-mx-10 sm:px-10 lg:mx-0 lg:px-0 lg:overflow-visible">
+                <ul
+                    ref={listRef}
+                    onScroll={onListScroll}
+                    className="mt-8 flex lg:flex-col gap-3 overflow-x-auto pb-2 -mx-5 px-5 sm:-mx-10 sm:px-10 lg:mx-0 lg:px-0 lg:overflow-visible"
+                >
                     {tm.items.map((person, i) => {
                         const active = i === idx;
                         return (
-                            <li key={person.name} className="snap-start shrink-0">
+                            <li key={person.name} className="shrink-0">
                                 <button
                                     type="button"
                                     onClick={() => select(i)}

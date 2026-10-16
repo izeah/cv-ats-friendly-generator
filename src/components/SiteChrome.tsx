@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/Language";
 import { LogoMark, Wordmark } from "@/components/Illustrations";
 import { useI18n } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 /** Logo link to home. */
 export function BrandLink({ size = "md" }: { size?: "sm" | "md" }) {
@@ -41,47 +42,64 @@ export function SiteHeader() {
     const setOpen = (v: boolean | ((prev: boolean) => boolean)) =>
         setOpenAt((typeof v === "function" ? v(open) : v) ? here : null);
 
+    const panel = useRef<HTMLDivElement>(null);
+    const toggle = useRef<HTMLButtonElement>(null);
+
     useEffect(() => {
         if (!open) return;
-        const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenAt(null);
+        const close = () => setOpenAt(null);
+        const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
+        // A click anywhere outside the dropdown closes it; the toggle button handles itself.
+        // composedPath, not contains(): the clicked Menu icon is already swapped for the X by now.
+        const onClick = (e: MouseEvent) => {
+            const path = e.composedPath();
+            if (!path.some((n) => n === panel.current || n === toggle.current)) close();
+        };
         window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
+        document.addEventListener("click", onClick);
+        return () => {
+            window.removeEventListener("keydown", onKey);
+            document.removeEventListener("click", onClick);
+        };
     }, [open]);
 
     return (
-        <header className="sticky top-0 z-50 glass border-b border-forest/15">
-            <div className="relative max-w-[1200px] mx-auto px-5 sm:px-10 h-16 flex items-center justify-between gap-3">
-                <BrandLink />
-                <nav className="hidden lg:flex items-center gap-8 text-sm font-bold" aria-label={t.common.home}>
-                    {sections.map((s) => (
-                        <a key={s.href} href={s.href} className="hover:underline underline-offset-4">
-                            {s.label}
-                        </a>
-                    ))}
-                </nav>
-                <div className="flex items-center gap-2">
-                    <LanguageSwitcher compact className="sm:hidden" />
-                    <LanguageSwitcher className="hidden sm:inline-flex" />
-                    <Button size="sm" onClick={() => navigate("/create")} className="hidden sm:inline-flex">
-                        {t.common.buildCV} <ArrowRight className="w-3.5 h-3.5" />
-                    </Button>
-                    <button
-                        type="button"
-                        onClick={() => setOpen((v) => !v)}
-                        aria-expanded={open}
-                        aria-controls="mobile-menu"
-                        aria-label={open ? t.nav.close : t.nav.open}
-                        className="lg:hidden w-10 h-10 rounded-full border border-foreground bg-card flex items-center justify-center cursor-pointer hover:bg-secondary transition-colors"
-                    >
-                        {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-                    </button>
+        <>
+            {/* Outside the header: its backdrop-filter would clip a fixed child to the bar. Sits above the sticky CTA. */}
+            {open && <div className="lg:hidden fixed inset-0 z-[95] bg-forest/30 animate-fade-in" aria-hidden="true" />}
+            <header className={cn("sticky top-0 glass border-b border-forest/15", open ? "z-[96]" : "z-50")}>
+                <div className="relative max-w-[1200px] mx-auto px-5 sm:px-10 h-16 flex items-center justify-between gap-3">
+                    <BrandLink />
+                    <nav className="hidden lg:flex items-center gap-8 text-sm font-bold" aria-label={t.common.home}>
+                        {sections.map((s) => (
+                            <a key={s.href} href={s.href} className="hover:underline underline-offset-4">
+                                {s.label}
+                            </a>
+                        ))}
+                    </nav>
+                    <div className="flex items-center gap-2">
+                        <LanguageSwitcher compact className="sm:hidden" />
+                        <LanguageSwitcher className="hidden sm:inline-flex" />
+                        <Button size="sm" onClick={() => navigate("/create")} className="hidden sm:inline-flex">
+                            {t.common.buildCV} <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                        <button
+                            ref={toggle}
+                            type="button"
+                            onClick={() => setOpen((v) => !v)}
+                            aria-expanded={open}
+                            aria-controls="mobile-menu"
+                            aria-label={open ? t.nav.close : t.nav.open}
+                            className="lg:hidden w-10 h-10 rounded-full border border-foreground bg-card flex items-center justify-center cursor-pointer hover:bg-secondary transition-colors"
+                        >
+                            {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            {open && (
-                <>
-                    <div className="lg:hidden fixed inset-0 top-16 bg-forest/30 animate-fade-in" onClick={() => setOpen(false)} />
+                {open && (
                     <div
+                        ref={panel}
                         id="mobile-menu"
                         className="lg:hidden absolute inset-x-0 top-full border-b border-foreground bg-card animate-slide-down"
                     >
@@ -106,9 +124,9 @@ export function SiteHeader() {
                             </div>
                         </nav>
                     </div>
-                </>
-            )}
-        </header>
+                )}
+            </header>
+        </>
     );
 }
 
