@@ -1,21 +1,24 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   Mail, Phone, MapPin, ArrowLeft, Download, Share2,
   Briefcase, Code2, FolderKanban, Calendar, CheckCircle2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { getCVBySlug, type CVData } from '@/lib/db'
+import { cvShareUrl, decodeCVShare, getCVBySlug, type CVData } from '@/lib/db'
 import { formatDate } from '@/lib/utils'
 import { generateATSPDF } from '@/lib/pdf-generator'
-import { SmallCactus, Tumbleweed } from '@/components/Illustrations'
+import { LogoMark, SmallCactus, Tumbleweed, Wordmark } from '@/components/Illustrations'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function CVPreview() {
   const { slug } = useParams<{ slug: string }>()
+  const { hash } = useLocation()
+  // /cv/:slug reads this browser's IndexedDB; /cv-share#<data> carries the CV in the link.
+  const shared = !slug
   const navigate = useNavigate()
-  const [cv, setCv] = useState<CVData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [localCV, setLocalCV] = useState<CVData | null>(null)
+  const [localLoading, setLocalLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -23,11 +26,23 @@ export default function CVPreview() {
     async function load() {
       if (!slug) return
       const data = await getCVBySlug(slug)
-      setCv(data ?? null)
-      setLoading(false)
+      setLocalCV(data ?? null)
+      setLocalLoading(false)
     }
     load()
   }, [slug])
+
+  const sharedCV = useMemo(() => {
+    if (!shared) return null
+    try {
+      return decodeCVShare(hash.slice(1))
+    } catch {
+      return null
+    }
+  }, [shared, hash])
+
+  const cv = shared ? sharedCV : localCV
+  const loading = !shared && localLoading
 
   const exportToPDF = async () => {
     if (!cv) return
@@ -42,12 +57,25 @@ export default function CVPreview() {
     }
   }
 
-  const shareLink = () => {
-    const url = window.location.href
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
+  const shareLink = async () => {
+    if (!cv) return
+    const url = shared ? window.location.href : cvShareUrl(cv)
+    try {
+      await navigator.clipboard.writeText(url)
+    } catch {
+      // Clipboard API can be blocked (permissions, older browsers): fall back to a hidden textarea.
+      const ta = document.createElement('textarea')
+      ta.value = url
+      ta.setAttribute('readonly', '')
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      ta.remove()
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleEdit = () => {
@@ -102,14 +130,23 @@ export default function CVPreview() {
             <SmallCactus className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 text-forest origin-bottom animate-sway" />
             <Tumbleweed className="absolute bottom-0 left-1/2 w-9 text-forest animate-roll" />
           </div>
-          <h2 className="font-display text-5xl font-bold uppercase tracking-[-0.03em] leading-none">CV Not Found</h2>
+          <h2 className="font-display text-5xl font-bold uppercase tracking-[-0.03em] leading-none">
+            {shared ? 'Link Broken' : 'CV Not Found'}
+          </h2>
           <p className="text-muted-foreground max-w-sm">
-            This CV doesn't exist or hasn't been generated yet.
-            The data is stored locally in your browser.
+            {shared
+              ? "This share link is broken or incomplete. Ask the sender to copy it again."
+              : "This CV doesn't exist or hasn't been built yet. The data is stored locally in your browser."}
           </p>
-          <Button variant="outline" onClick={handleEdit}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to edit
-          </Button>
+          {shared ? (
+            <Button variant="outline" onClick={() => navigate('/')}>
+              Build your own CV
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={handleEdit}>
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to edit
+            </Button>
+          )}
         </div>
       </div>
     )
@@ -122,9 +159,16 @@ export default function CVPreview() {
       {/* Controls Bar */}
       <div className="sticky top-0 z-50 glass border-b border-forest/15 no-print">
         <div className="max-w-[850px] mx-auto px-4 py-3 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={handleEdit}>
-            <ArrowLeft className="w-4 h-4 mr-1" /> Back to edit
-          </Button>
+          {shared ? (
+            <Link to="/" className="flex items-center gap-2" title="CV ATS Friendly Builder">
+              <LogoMark className="w-8 h-8" />
+              <Wordmark className="text-[11px] hidden sm:flex" />
+            </Link>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={handleEdit}>
+              <ArrowLeft className="w-4 h-4 mr-1" /> Back to edit
+            </Button>
+          )}
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={shareLink}>
               {copied ? <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-success" /> : <Share2 className="w-3.5 h-3.5 mr-1" />}
@@ -303,7 +347,7 @@ export default function CVPreview() {
           {/* Footer */}
           <div className="px-6 sm:px-10 py-4 text-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Generated by CV ATS Friendly Generator
+              Built with CV ATS Friendly Builder
             </p>
           </div>
         </div>
@@ -311,9 +355,11 @@ export default function CVPreview() {
         {/* Mobile Bottom Actions */}
         <div className="fixed bottom-0 left-0 right-0 glass border-t border-forest/15 p-3 sm:hidden no-print">
           <div className="flex gap-2 max-w-[850px] mx-auto">
-            <Button variant="outline" size="default" className="flex-1 px-3" onClick={handleEdit}>
-              <ArrowLeft className="w-4 h-4 mr-1" /> Back to edit
-            </Button>
+            {!shared && (
+              <Button variant="outline" size="default" className="flex-1 px-3" onClick={handleEdit}>
+                <ArrowLeft className="w-4 h-4 mr-1" /> Back to edit
+              </Button>
+            )}
             <Button variant="outline" size="default" className="flex-1 px-3" onClick={shareLink}>
               <Share2 className="w-4 h-4 mr-1" />{copied ? 'Copied!' : 'Share'}
             </Button>

@@ -1105,7 +1105,7 @@ export default function CVForm() {
                             disabled={saving}
                         >
                             <Sparkles className="w-4 h-4 mr-2" />
-                            {saving ? "Generating..." : "Generate & Preview CV"}
+                            {saving ? "Building..." : "Preview & Build CV"}
                         </Button>
                     </div>
                     </div>

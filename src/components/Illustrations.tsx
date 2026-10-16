@@ -15,7 +15,7 @@ const stroke = {
     vectorEffect: "non-scaling-stroke",
 } as const;
 
-/** Brand mark: a CV sheet crossed by a Marigold ATS scan beam, plus a generator sparkle. */
+/** Brand mark: a CV sheet crossed by a Marigold ATS scan beam, plus a builder sparkle. */
 export function LogoMark({ className, animated = true }: { className?: string; animated?: boolean }) {
     return (
         <svg viewBox="0 0 64 64" className={cn("shrink-0", className)} aria-hidden="true">
@@ -41,7 +41,7 @@ export function Wordmark({ className }: { className?: string }) {
     return (
         <span className={cn("flex flex-col leading-none", className)}>
             <span className="font-display font-bold uppercase tracking-[-0.02em] text-[1.3em]">CV ATS Friendly</span>
-            <span className="font-bold uppercase tracking-[0.3em] text-[0.62em] mt-[0.3em]">Generator</span>
+            <span className="font-bold uppercase tracking-[0.3em] text-[0.62em] mt-[0.3em]">Builder</span>
         </span>
     );
 }

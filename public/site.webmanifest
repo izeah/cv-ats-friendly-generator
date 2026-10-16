@@ -1,5 +1,5 @@
 {
-  "name": "CV ATS Friendly Generator",
+  "name": "CV ATS Friendly Builder",
   "short_name": "CV ATS",
   "description": "Build ATS-friendly CVs for Backend Developers. Everything stays in your browser.",
   "start_url": "/",

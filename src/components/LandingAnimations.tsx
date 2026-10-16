@@ -1,4 +1,4 @@
-// Looping motion pieces for the landing page: the hero CV mockup that "generates"
+// Looping motion pieces for the landing page: the hero CV mockup that "builds"
 // and passes an ATS scan, and a recruiter chat that cycles through five threads.
 import { useEffect, useState } from "react";
 import { FileText, Paperclip } from "lucide-react";
@@ -80,7 +80,7 @@ export function HeroMockup() {
                                 "jane-doe-cv.pdf"
                             ) : (
                                 <>
-                                    Generating <Dots className="bg-cream" />
+                                    Building <Dots className="bg-cream" />
                                 </>
                             )}
                         </span>

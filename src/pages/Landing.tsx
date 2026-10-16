@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import {
-  Sparkles, ArrowRight, FileText, Download, Code2, Zap, ShieldCheck, Braces,
+  Sparkles, ArrowRight, FileText, Download, Code2, Zap, ShieldCheck, Braces, Share2,
   ChevronRight, ChevronDown, Check, Archive, Briefcase,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -32,8 +32,8 @@ const features = [
   },
   {
     icon: Zap,
-    title: 'Instant Generation',
-    description: 'Fill the form, hit generate. Your professional CV is ready in seconds — no sign-up required.',
+    title: 'Instant Build',
+    description: 'Fill the form, hit Preview & Build. Your professional CV is ready in seconds — no sign-up required.',
   },
   {
     icon: ShieldCheck,
@@ -49,7 +49,7 @@ const features = [
 
 const faqs = [
   {
-    q: 'Is CV ATS Friendly Generator really free?',
+    q: 'Is CV ATS Friendly Builder really free?',
     a: 'Yes. There is no account, no paywall and no watermark. Open the builder and start typing.',
   },
   {
@@ -58,15 +58,15 @@ const faqs = [
   },
   {
     q: 'What makes the PDF ATS-friendly?',
-    a: 'It is generated as real, selectable text in a single column with standard section headings — no images, tables or text boxes that trip up parsers.',
+    a: 'It is built from real, selectable text in a single column with standard section headings — no images, tables or text boxes that trip up parsers.',
   },
   {
     q: 'Can I move my CVs to another device?',
     a: 'Yes. Choose Export JSON from a CV\'s menu, then use Import on the other browser. If a CV with the same email already exists there, you will be asked before it is replaced.',
   },
   {
-    q: 'Who can open my CV preview page?',
-    a: 'Only browsers that have the CV saved — the data never leaves your device. To send your CV to a recruiter, download the PDF and attach it.',
+    q: 'How do I share my CV?',
+    a: 'Press Share on your CV page. It copies a link that carries the CV inside the URL itself (after the #), so whoever opens it sees your CV and can download the PDF — nothing is uploaded to a server. Anyone with the link can read it, so only send it to people you trust.',
   },
   {
     q: 'Can I keep more than one version?',
@@ -118,7 +118,7 @@ export default function Landing() {
             <a href="#faq" className="hover:underline underline-offset-4">FAQ</a>
           </div>
           <Button size="sm" onClick={() => navigate('/create')}>
-            Create CV <ArrowRight className="w-3.5 h-3.5" />
+            Build CV <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         </div>
       </nav>
@@ -199,7 +199,7 @@ export default function Landing() {
           <Sparkle className="twinkle absolute top-[46%] left-[8%] w-6 text-forest hidden md:block" />
           <Sparkle className="twinkle absolute bottom-[38%] right-[9%] w-5 text-forest [animation-delay:-1.2s] hidden md:block" />
           <SectionHeading eyebrow="How it works" title={<>From form to<br />finished CV</>}>
-            Everything you type flows through one formatter and comes out ready for a recruiter — as a PDF, a preview page, or a JSON backup.
+            Everything you type flows through one formatter and comes out ready for a recruiter — as a PDF, a share link, or a JSON backup.
           </SectionHeading>
           <PipelineDiagram />
           <div className="mt-20 sm:mt-28">
@@ -215,6 +215,7 @@ export default function Landing() {
             <SectionHeading eyebrow="Sharing" title={<>Ready the moment<br />a recruiter asks</>} />
             <ul className="space-y-7 -mt-4">
               {[
+                { icon: Share2, title: 'Share as a link', text: 'One link carries your CV — the recipient can view it and download the PDF.' },
                 { icon: Download, title: 'Download a clean PDF', text: 'One click, text-based, parsed correctly by ATS software.' },
                 { icon: Braces, title: 'Back up as JSON', text: 'Keep a copy or move it to another device.' },
                 { icon: Archive, title: 'Keep every version', text: 'Archive CVs you are not using and bring them back anytime.' },
@@ -338,7 +339,7 @@ export default function Landing() {
               Build a CV that passes ATS filters, impresses hiring managers, and gets you to the interview stage.
             </p>
             <Button variant="marigold" size="lg" onClick={() => navigate('/create')} className="mt-8 group">
-              Create your CV now
+              Build your CV now
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>

@@ -312,7 +312,7 @@ export default function Sidebar({
                                 <p className="text-xs font-bold text-muted-foreground">
                                     {showArchived
                                         ? "No archived CVs"
-                                        : "No CVs yet. Create one!"}
+                                        : "No CVs yet. Build one!"}
                                 </p>
                             </>
                         )}

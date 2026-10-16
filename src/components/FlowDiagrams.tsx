@@ -9,6 +9,7 @@ import {
     Download,
     Eye,
     Braces,
+    Link2,
     PenLine,
     type LucideIcon,
 } from "lucide-react";
@@ -71,7 +72,7 @@ const INPUTS = [
 
 const OUTPUTS = [
     { label: "PDF export", short: "PDF", icon: Download, y: 110 },
-    { label: "Preview page", short: "Preview", icon: Eye, y: 220 },
+    { label: "Share link", short: "Share", icon: Link2, y: 220 },
     { label: "JSON backup", short: "JSON", icon: Braces, y: 330 },
 ];
 
