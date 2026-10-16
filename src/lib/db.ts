@@ -156,7 +156,7 @@ export function parseCVJson(text: string): CVData {
   const email = str(raw?.email).trim().toLowerCase()
   const fullName = str(raw?.fullName).trim()
   if (!email || !fullName || !Array.isArray(raw.workExperiences) || !Array.isArray(raw.skills)) {
-    throw new Error('Not a CV Forge file: email, fullName, workExperiences or skills is missing.')
+    throw new Error('Not a CV ATS Friendly Generator file: email, fullName, workExperiences or skills is missing.')
   }
   const now = new Date()
   return {

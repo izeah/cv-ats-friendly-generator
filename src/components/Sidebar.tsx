@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-    Sparkles,
     Plus,
     ChevronRight,
     Trash2,
@@ -31,6 +30,8 @@ import {
     type CVData,
 } from "@/lib/db";
 import { generateSlug, cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LogoMark, Wordmark, SmallCactus } from "@/components/Illustrations";
 
 interface SidebarProps {
     currentEmail?: string;
@@ -52,6 +53,7 @@ export default function Sidebar({
     const navigate = useNavigate();
     const location = useLocation();
     const [cvs, setCvs] = useState<CVData[]>([]);
+    const [loading, setLoading] = useState(true);
     const [archivedCvs, setArchivedCvs] = useState<CVData[]>([]);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
@@ -73,10 +75,13 @@ export default function Sidebar({
     }, [toast]);
 
     const loadData = async () => {
-        const active = await getAllCVs(false);
+        const [active, archived] = await Promise.all([
+            getAllCVs(false),
+            getArchivedCVs(),
+        ]);
         setCvs(active);
-        const archived = await getArchivedCVs();
         setArchivedCvs(archived);
+        setLoading(false);
     };
 
     useEffect(() => {
@@ -175,7 +180,7 @@ export default function Sidebar({
                     <div
                         className={cn(
                             "group flex items-center gap-2.5 cursor-pointer relative",
-                            isCollapsed && "justify-center w-8 h-8",
+                            isCollapsed && "justify-center w-9 h-9",
                         )}
                         onClick={() => {
                             if (isCollapsed) {
@@ -186,26 +191,23 @@ export default function Sidebar({
                         }}
                         title={isCollapsed ? "Expand sidebar" : "Go to home"}
                     >
-                        <div className="w-8 h-8 rounded-full bg-forest flex items-center justify-center shrink-0 relative">
-                            <Sparkles
+                        <div className="w-9 h-9 flex items-center justify-center shrink-0 relative">
+                            <LogoMark
                                 className={cn(
-                                    "w-4 h-4 text-marigold transition-opacity",
+                                    "w-9 h-9 transition-opacity",
                                     isCollapsed && "group-hover:opacity-0",
                                 )}
                             />
                             {isCollapsed && (
-                                <ChevronRight className="absolute w-3.5 h-3.5 text-cream opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <span className="absolute inset-0 rounded-[10px] bg-forest flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <ChevronRight className="w-4 h-4 text-cream" />
+                                </span>
                             )}
                         </div>
                         {!isCollapsed && (
-                            <div>
-                                <h1 className="font-display text-lg font-bold uppercase leading-none">
-                                    CV Forge
-                                </h1>
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">
-                                    ATS-Friendly
-                                </p>
-                            </div>
+                            <h1>
+                                <Wordmark className="text-[13px]" />
+                            </h1>
                         )}
                     </div>
                     {/* Collapse button - desktop only */}
@@ -286,14 +288,33 @@ export default function Sidebar({
 
             {/* CV List */}
             <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-                {displayCvs.length === 0 && (
+                {loading &&
+                    [0, 1, 2].map((i) => (
+                        <div
+                            key={i}
+                            aria-hidden="true"
+                            className={cn("flex items-center gap-2.5 p-2.5", isCollapsed && "justify-center p-2")}
+                        >
+                            <Skeleton className="w-8 h-8 shrink-0" />
+                            {!isCollapsed && (
+                                <div className="flex-1 space-y-1.5">
+                                    <Skeleton className="h-3 w-3/4" />
+                                    <Skeleton className="h-2 w-1/2" />
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                {!loading && displayCvs.length === 0 && (
                     <div className="text-center py-8 px-3">
                         {!isCollapsed && (
-                            <p className="text-xs text-muted-foreground">
-                                {showArchived
-                                    ? "No archived CVs"
-                                    : "No CVs yet. Create one!"}
-                            </p>
+                            <>
+                                <SmallCactus className="w-14 mx-auto mb-3 text-forest origin-bottom animate-sway" />
+                                <p className="text-xs font-bold text-muted-foreground">
+                                    {showArchived
+                                        ? "No archived CVs"
+                                        : "No CVs yet. Create one!"}
+                                </p>
+                            </>
                         )}
                     </div>
                 )}

@@ -9,16 +9,12 @@ import {
     Download,
     Eye,
     Braces,
-    Sparkles,
     PenLine,
     type LucideIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, prefersReducedMotion } from "@/lib/utils";
+import { LogoMark } from "@/components/Illustrations";
 import { useInView } from "@/lib/useInView";
-
-const reducedMotion = () =>
-    typeof matchMedia !== "undefined" &&
-    matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const delay = (ms: number): CSSProperties => ({
     transitionDelay: `${ms}ms`,
@@ -57,11 +53,8 @@ function Hub({ className }: { className?: string }) {
         <div className={cn("relative aspect-square", className)}>
             <div className="absolute -inset-[30%] rounded-full bg-marigold blur-2xl animate-hub-glow" />
             <div className="reveal relative w-full h-full rounded-full bg-forest text-cream border-2 border-forest flex flex-col items-center justify-center text-center shadow-stamp-cream">
-                <Sparkles className="w-[22%] h-[22%] text-marigold mb-1" />
-                <span className="font-display font-bold uppercase leading-none text-[clamp(14px,1.6vw,20px)]">
-                    CV Forge
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-cream/75 mt-1">
+                <LogoMark className="w-[42%] h-[42%] mb-1.5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cream/80">
                     ATS formatter
                 </span>
             </div>
@@ -110,7 +103,7 @@ function Connector({ d, order, live }: { d: string; order: number; live: boolean
 
 export function PipelineDiagram() {
     const [ref, inView] = useInView<HTMLDivElement>();
-    const animate = inView && !reducedMotion();
+    const animate = inView && !prefersReducedMotion();
     const paths = [...INPUTS.map((n) => inPath(n.y)), ...OUTPUTS.map((n) => outPath(n.y))];
 
     return (

@@ -34,6 +34,7 @@ import {
     CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import Sidebar from "@/components/Sidebar";
 import {
@@ -595,6 +596,29 @@ function ExperienceForm({
     );
 }
 
+function FormSkeleton() {
+    return (
+        <div className="space-y-6" aria-busy="true" aria-label="Loading CV">
+            {[5, 1, 3].map((fields, i) => (
+                <div key={i} className="rounded-card border border-forest/20 bg-card p-7 space-y-5">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="w-10 h-10 shrink-0" />
+                        <Skeleton className="h-6 w-48 rounded-xl" />
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        {Array.from({ length: fields }, (_, j) => (
+                            <div key={j} className="space-y-2">
+                                <Skeleton className="h-3 w-24" />
+                                <Skeleton className="h-11 w-full" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 // ========================
 // Main CVForm
 // ========================
@@ -617,6 +641,8 @@ export default function CVForm() {
     const [workExperiences, setWorkExperiences] = useState<WorkExperience[]>([
         createEmptyExperience(),
     ]);
+    // Which ?email= the form currently holds; anything else is still loading.
+    const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
     // Reset form function
     const resetForm = () => {
@@ -648,10 +674,12 @@ export default function CVForm() {
                     : [createEmptyExperience()],
             );
         }
+        setLoadedFor(targetEmail);
     };
 
     // Auto-load from URL param on mount / URL change
     const emailParam = searchParams.get("email");
+    const loadingCV = !!emailParam && loadedFor !== emailParam;
     useEffect(() => {
         if (emailParam) {
             loadCVData(emailParam);
@@ -800,7 +828,7 @@ export default function CVForm() {
                         <div className="flex items-center gap-3 min-w-0">
                             <div className="pl-12 lg:pl-0 min-w-0">
                                 <h2 className="font-display text-xl font-bold uppercase leading-none">
-                                    {email ? "Edit CV" : "New CV"}
+                                    {email || loadingCV ? "Edit CV" : "New CV"}
                                 </h2>
                                 {email && (
                                     <p className="text-[11px] text-muted-foreground mt-1 truncate">
@@ -830,7 +858,9 @@ export default function CVForm() {
                     </div>
                 </header>
 
-                <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6 relative z-10">
+                <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 relative z-10">
+                    {loadingCV && <FormSkeleton />}
+                    <div className={loadingCV ? "hidden" : "space-y-6"}>
                     {/* Personal Info */}
                     <Card className="overflow-hidden">
                         <CardHeader className="pb-5">
@@ -1077,6 +1107,7 @@ export default function CVForm() {
                             <Sparkles className="w-4 h-4 mr-2" />
                             {saving ? "Generating..." : "Generate & Preview CV"}
                         </Button>
+                    </div>
                     </div>
                 </main>
             </div>

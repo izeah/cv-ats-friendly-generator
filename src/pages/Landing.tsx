@@ -2,15 +2,16 @@ import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import {
   Sparkles, ArrowRight, FileText, Download, Code2, Zap, ShieldCheck, Braces,
-  ChevronRight, ChevronDown, Check, Archive, Paperclip, Briefcase,
+  ChevronRight, ChevronDown, Check, Archive, Briefcase,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getAllCVs, type CVData } from '@/lib/db'
-import { cn, generateSlug } from '@/lib/utils'
+import { generateSlug } from '@/lib/utils'
 import { PipelineDiagram, StepFlow } from '@/components/FlowDiagrams'
-import { useInView } from '@/lib/useInView'
+import { HeroMockup, RecruiterChat } from '@/components/LandingAnimations'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
-  Cactus, SmallCactus, Cloud, Sun, CVSheet, PaperPlane, Magnifier, LogoMark,
+  Cactus, SmallCactus, Cloud, Sun, CVSheet, LogoMark, Wordmark, QuestionBubbles, Balloon, Birds, Sparkle,
 } from '@/components/Illustrations'
 
 const features = [
@@ -48,7 +49,7 @@ const features = [
 
 const faqs = [
   {
-    q: 'Is CV Forge really free?',
+    q: 'Is CV ATS Friendly Generator really free?',
     a: 'Yes. There is no account, no paywall and no watermark. Open the builder and start typing.',
   },
   {
@@ -80,13 +81,6 @@ const stats = [
   { value: 'JSON', label: 'Backup & restore' },
 ]
 
-const chat = [
-  { from: 'them', text: 'Hi! Loved your profile. Could you send over your latest CV?' },
-  { from: 'me', text: 'Sure — here it is.', file: 'jane-doe-cv.pdf' },
-  { from: 'them', text: 'Clean format, our ATS read every section. Free for a call on Monday?' },
-  { from: 'me', text: 'Monday works. Talk then!' },
-] as const
-
 function SectionHeading({ eyebrow, title, children }: { eyebrow: string; title: React.ReactNode; children?: React.ReactNode }) {
   return (
     <div className="max-w-2xl mb-12 sm:mb-16">
@@ -101,101 +95,9 @@ function SectionHeading({ eyebrow, title, children }: { eyebrow: string; title: 
   )
 }
 
-function HeroMockup() {
-  return (
-    <div className="relative mx-auto w-full max-w-[420px] lg:max-w-none">
-      <Sun className="absolute -top-10 right-2 w-24 text-forest animate-float" />
-      <Cloud className="absolute top-6 -left-10 w-28 text-forest hidden sm:block" />
-      <Cactus className="absolute -bottom-6 -right-6 sm:-right-14 w-28 sm:w-36 text-forest" />
-
-      <div className="relative rounded-card border border-foreground bg-card shadow-stamp p-6 sm:p-8 rotate-[-1.5deg]">
-        <div className="flex items-center justify-between mb-6">
-          <span className="inline-flex items-center gap-2 rounded-full bg-forest text-cream pl-1.5 pr-3.5 py-1.5 text-xs font-bold">
-            <span className="w-5 h-5 rounded-full bg-marigold text-forest flex items-center justify-center">
-              <Paperclip className="w-3 h-3" />
-            </span>
-            jane-doe-cv.pdf
-          </span>
-          <span className="rounded-full bg-marigold border border-foreground px-3 py-1 text-[11px] font-bold uppercase">
-            ATS-ready
-          </span>
-        </div>
-        <p className="font-display text-4xl font-bold uppercase leading-none tracking-[-0.03em]">Jane Doe</p>
-        <p className="text-sm font-bold text-muted-foreground mt-1 mb-5">Senior Backend Engineer · Jakarta</p>
-
-        {([['Summary', 3], ['Experience', 4]] as const).map(([label, lines]) => (
-          <div key={label} className="mb-5">
-            <p className="text-[11px] font-bold uppercase tracking-widest mb-2">{label}</p>
-            <div className="h-px bg-forest/20 mb-3" />
-            <div className="space-y-2">
-              {Array.from({ length: lines }, (_, i) => (
-                <div key={i} className="h-2 rounded-full bg-forest/15" style={{ width: `${92 - i * 14}%` }} />
-              ))}
-            </div>
-          </div>
-        ))}
-        <div className="flex flex-wrap gap-1.5">
-          {['Go', 'PostgreSQL', 'Kafka', 'Docker'].map(s => (
-            <span key={s} className="rounded-full bg-forest text-cream px-3 py-1 text-xs font-bold">{s}</span>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function ChatDemo() {
-  const [ref, inView] = useInView<HTMLDivElement>(0.3)
-  return (
-    <div ref={ref} className={cn('relative', inView && 'in-view')}>
-      <PaperPlane className="absolute -top-14 right-4 w-28 text-forest animate-float" />
-      <div className="relative rounded-card border border-foreground bg-card shadow-stamp p-5 sm:p-7">
-        <div className="flex items-center gap-3 pb-4 mb-5 border-b border-forest/15">
-          <span className="w-10 h-10 rounded-full bg-marigold border border-foreground flex items-center justify-center font-display font-bold">
-            RT
-          </span>
-          <div>
-            <p className="font-bold leading-tight">Rina · Talent Acquisition</p>
-            <p className="text-xs text-muted-foreground">Illustrative conversation</p>
-          </div>
-        </div>
-        <div className="space-y-3">
-          {chat.map((m, i) => (
-            <div
-              key={i}
-              className={cn('reveal flex items-end gap-2', m.from === 'me' && 'flex-row-reverse')}
-              style={{ transitionDelay: `${300 + i * 700}ms` }}
-            >
-              <span className={cn(
-                'w-8 h-8 rounded-full border border-foreground flex items-center justify-center text-[11px] font-bold shrink-0',
-                m.from === 'me' ? 'bg-forest text-cream' : 'bg-marigold',
-              )}>
-                {m.from === 'me' ? 'JD' : 'RT'}
-              </span>
-              <div className={cn(
-                'max-w-[80%] px-4 py-3 text-sm font-semibold leading-snug border',
-                m.from === 'me'
-                  ? 'bg-forest text-cream border-forest rounded-[24px] rounded-br-md'
-                  : 'bg-white text-forest border-forest/30 rounded-[24px] rounded-bl-md',
-              )}>
-                {m.text}
-                {'file' in m && (
-                  <span className="mt-2 flex items-center gap-2 rounded-full bg-cream text-forest px-3 py-1.5 text-xs font-bold">
-                    <FileText className="w-3.5 h-3.5" /> {m.file}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function Landing() {
   const navigate = useNavigate()
-  const [recentCVs, setRecentCVs] = useState<CVData[]>([])
+  const [recentCVs, setRecentCVs] = useState<CVData[] | null>(null)
 
   useEffect(() => {
     getAllCVs().then(cvs => setRecentCVs(cvs.slice(0, 5)))
@@ -207,8 +109,8 @@ export default function Landing() {
       <nav className="sticky top-0 z-50 glass border-b border-forest/15">
         <div className="max-w-[1200px] mx-auto px-5 sm:px-10 h-16 flex items-center justify-between gap-6">
           <a href="#top" className="flex items-center gap-2.5">
-            <LogoMark className="w-9 h-9" />
-            <span className="font-display text-2xl font-bold uppercase tracking-[-0.02em]">CV Forge</span>
+            <LogoMark className="w-10 h-10" />
+            <Wordmark className="text-base" />
           </a>
           <div className="hidden md:flex items-center gap-8 text-sm font-bold">
             <a href="#features" className="hover:underline underline-offset-4">Features</a>
@@ -265,7 +167,9 @@ export default function Landing() {
       </section>
 
       {/* Features */}
-      <section id="features" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
+      <section id="features" className="relative scroll-mt-20 max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
+        <Balloon className="absolute top-16 right-6 sm:right-16 w-14 sm:w-20 text-forest animate-bob" />
+        <Cloud className="absolute top-40 right-32 w-24 text-forest animate-drift [animation-delay:-4s] hidden md:block" />
         <SectionHeading eyebrow="Features" title={<>Everything you need<br />to stand out</>}>
           Purpose-built for Backend Developers who want to leave a lasting impression on recruiters and hiring managers.
         </SectionHeading>
@@ -289,7 +193,11 @@ export default function Landing() {
 
       {/* How it works — pipeline diagram + step flowchart */}
       <section id="how" className="scroll-mt-20 border-y border-forest/15 bg-parchment/60">
-        <div className="max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
+        <div className="relative max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
+          <Cloud className="absolute top-14 right-6 sm:right-20 w-28 text-forest animate-drift" />
+          <CVSheet className="absolute top-36 right-40 w-12 text-forest animate-bob [animation-delay:-2s] hidden lg:block" />
+          <Sparkle className="twinkle absolute top-[46%] left-[8%] w-6 text-forest hidden md:block" />
+          <Sparkle className="twinkle absolute bottom-[38%] right-[9%] w-5 text-forest [animation-delay:-1.2s] hidden md:block" />
           <SectionHeading eyebrow="How it works" title={<>From form to<br />finished CV</>}>
             Everything you type flows through one formatter and comes out ready for a recruiter — as a PDF, a preview page, or a JSON backup.
           </SectionHeading>
@@ -323,13 +231,16 @@ export default function Landing() {
               ))}
             </ul>
           </div>
-          <ChatDemo />
+          <RecruiterChat />
         </div>
       </section>
 
       {/* Stat band */}
-      <section className="bg-marigold border-y border-forest">
-        <div className="max-w-[1200px] mx-auto px-5 sm:px-10 py-16 sm:py-20 grid grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6">
+      <section className="relative overflow-hidden bg-marigold border-y border-forest">
+        <Sparkle className="twinkle absolute top-6 right-8 w-7 text-forest" />
+        <Sparkle className="twinkle absolute bottom-6 left-[45%] w-5 text-forest [animation-delay:-0.8s]" />
+        <Birds className="absolute top-8 left-[30%] w-14 text-forest animate-drift hidden sm:block" />
+        <div className="relative max-w-[1200px] mx-auto px-5 sm:px-10 py-16 sm:py-20 grid grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6">
           {stats.map(s => (
             <div key={s.label}>
               <p className="font-display text-5xl sm:text-6xl font-bold uppercase leading-none tracking-[-0.03em]">{s.value}</p>
@@ -340,7 +251,23 @@ export default function Landing() {
       </section>
 
       {/* Saved CVs */}
-      {recentCVs.length > 0 && (
+      {recentCVs === null && (
+        <section className="max-w-[1200px] mx-auto px-5 sm:px-10 pt-20 sm:pt-28" aria-busy="true">
+          <Skeleton className="h-9 w-64 mb-8" />
+          <div className="grid sm:grid-cols-2 gap-4">
+            {[0, 1].map(i => (
+              <div key={i} className="flex items-center gap-3 rounded-full border border-forest/20 pl-2 pr-5 py-2">
+                <Skeleton className="w-11 h-11 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-2.5 w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      {recentCVs && recentCVs.length > 0 && (
         <section className="max-w-[1200px] mx-auto px-5 sm:px-10 pt-20 sm:pt-28">
           <h2 className="font-display text-4xl font-bold uppercase tracking-[-0.03em] mb-8 flex items-center gap-3">
             <Briefcase className="w-7 h-7" strokeWidth={1.75} /> Your saved CVs
@@ -375,7 +302,7 @@ export default function Landing() {
             <SectionHeading eyebrow="FAQ" title={<>Questions,<br />answered</>}>
               Still unsure? Everything about how your data and files are handled.
             </SectionHeading>
-            <Magnifier className="hidden lg:block w-28 text-forest -mt-4" />
+            <QuestionBubbles className="w-36 sm:w-44 text-forest -mt-4 animate-bob" />
           </div>
           <div className="border-t border-forest/25">
             {faqs.map(f => (
@@ -398,10 +325,11 @@ export default function Landing() {
       {/* CTA band */}
       <section className="px-5 sm:px-10 pb-20 sm:pb-28">
         <div className="relative max-w-[1200px] mx-auto overflow-hidden rounded-card bg-forest text-cream px-7 py-14 sm:px-16 sm:py-20">
-          <Sun className="absolute top-8 right-10 w-20 text-cream/70 hidden sm:block" />
-          <SmallCactus className="absolute bottom-0 right-40 w-16 text-cream/60 hidden md:block" />
-          <Cactus className="absolute -bottom-2 right-6 w-28 sm:w-36 text-cream/80" />
-          <CVSheet className="absolute top-10 left-[55%] w-16 text-cream/40 hidden lg:block rotate-12" />
+          <Sun className="absolute top-8 right-10 w-20 text-cream/70 hidden sm:block animate-spin-slow" />
+          <Birds className="absolute top-12 right-40 w-16 text-cream/70 animate-drift hidden sm:block" />
+          <SmallCactus className="absolute bottom-0 right-40 w-16 text-cream/60 hidden md:block origin-bottom animate-sway [animation-delay:-1.5s]" />
+          <Cactus className="absolute -bottom-2 right-6 w-28 sm:w-36 text-cream/80 origin-bottom animate-sway" />
+          <CVSheet className="absolute top-10 left-[55%] w-16 text-cream/40 hidden lg:block animate-bob" />
           <div className="relative max-w-xl">
             <h2 className="font-display text-5xl sm:text-7xl font-bold uppercase leading-[0.88] tracking-[-0.03em]">
               Ready to land<br />your next role?
@@ -421,8 +349,8 @@ export default function Landing() {
       <footer className="border-t border-forest/15">
         <div className="max-w-[1200px] mx-auto px-5 sm:px-10 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <LogoMark className="w-7 h-7" />
-            <span className="font-display text-lg font-bold uppercase">CV Forge</span>
+            <LogoMark className="w-9 h-9" />
+            <Wordmark className="text-sm" />
           </div>
           <p className="text-sm text-muted-foreground text-center">
             Built for Backend Developers. All data stored locally in your browser.

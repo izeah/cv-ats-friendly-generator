@@ -18,3 +18,7 @@ export function formatDate(month: string, year: string): string {
 export function generateSlug(email: string): string {
   return btoa(email).replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
 }
+
+export function prefersReducedMotion(): boolean {
+  return typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+}
