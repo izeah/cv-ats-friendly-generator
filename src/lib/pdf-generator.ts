@@ -20,7 +20,15 @@ const TEXT_COLOR: [number, number, number] = [15, 23, 42]; // Slate-900
 const MUTED_COLOR: [number, number, number] = [100, 116, 139]; // Slate-500
 const DARK_COLOR: [number, number, number] = [30, 41, 59]; // Slate-800
 
-export function generateATSPDF(cv: CVData): void {
+export interface PDFLabels {
+    summary: string;
+    skills: string;
+    experience: string;
+    present: string;
+    tech: string;
+}
+
+export function generateATSPDF(cv: CVData, labels: PDFLabels, lang: "en" | "id" = "en"): void {
     const pdf = new jsPDF("p", "mm", "a4");
     let y = MARGIN_TOP;
 
@@ -180,7 +188,7 @@ export function generateATSPDF(cv: CVData): void {
     // ============================================================
 
     if (cv.about && cv.about.trim()) {
-        drawSectionHeader("Summary");
+        drawSectionHeader(labels.summary);
         drawText(cv.about.trim(), 9.5, DARK_COLOR, "normal");
         y += 1;
     }
@@ -190,7 +198,7 @@ export function generateATSPDF(cv: CVData): void {
     // ============================================================
 
     if (cv.skills.length > 0) {
-        drawSectionHeader("Technical Skills");
+        drawSectionHeader(labels.skills);
         const skillText = cv.skills.join(", ");
         drawText(skillText, 9.5, DARK_COLOR, "normal");
         y += 1;
@@ -202,14 +210,14 @@ export function generateATSPDF(cv: CVData): void {
 
     const validExps = cv.workExperiences.filter((e) => e.company);
     if (validExps.length > 0) {
-        drawSectionHeader("Work Experience");
+        drawSectionHeader(labels.experience);
 
         validExps.forEach((exp, expIdx) => {
-            const startDate = formatDate(exp.startMonth, exp.startYear);
+            const startDate = formatDate(exp.startMonth, exp.startYear, lang);
             const endDate =
                 exp.endMonth && exp.endYear
-                    ? formatDate(exp.endMonth, exp.endYear)
-                    : "Present";
+                    ? formatDate(exp.endMonth, exp.endYear, lang)
+                    : labels.present;
             const dateRange = startDate ? `${startDate} – ${endDate}` : "";
 
             // Company name + date (on same line)
@@ -244,14 +252,11 @@ export function generateATSPDF(cv: CVData): void {
                 (p) => p.description || p.title,
             );
             validProjects.forEach((project) => {
-                const projStart = formatDate(
-                    project.startMonth,
-                    project.startYear,
-                );
+                const projStart = formatDate(project.startMonth, project.startYear, lang);
                 const projEnd =
                     project.endMonth && project.endYear
-                        ? formatDate(project.endMonth, project.endYear)
-                        : "Present";
+                        ? formatDate(project.endMonth, project.endYear, lang)
+                        : labels.present;
                 const projDateRange = projStart
                     ? `${projStart} – ${projEnd}`
                     : "";
@@ -290,7 +295,7 @@ export function generateATSPDF(cv: CVData): void {
                 // Technologies
                 if (project.technologies.length > 0) {
                     checkPageBreak(6);
-                    const techStr = `Tech: ${project.technologies.join(", ")}`;
+                    const techStr = `${labels.tech}: ${project.technologies.join(", ")}`;
                     pdf.setFontSize(8);
                     pdf.setFont("helvetica", "italic");
                     pdf.setTextColor(...TEXT_COLOR);

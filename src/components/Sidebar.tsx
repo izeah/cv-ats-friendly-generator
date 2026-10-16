@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
     Plus,
@@ -16,6 +15,7 @@ import {
     Upload,
     CircleCheck,
     CircleAlert,
+    LoaderCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +30,7 @@ import {
     type CVData,
 } from "@/lib/db";
 import { generateSlug, cn } from "@/lib/utils";
+import { fill, rich, useI18n } from "@/lib/i18n";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LogoMark, Wordmark, SmallCactus } from "@/components/Illustrations";
 
@@ -42,6 +43,28 @@ interface SidebarProps {
     onToggleSidebar?: () => void;
 }
 
+const menuItem =
+    "w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-secondary transition-colors border-b border-forest/10 last:border-b-0";
+
+function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+    return (
+        <>
+            <div className="fixed inset-0 bg-forest/40 backdrop-blur-sm z-[100] animate-fade-in" onClick={onClose} />
+            <div className="fixed inset-0 flex items-center justify-center z-[101] animate-fade-in p-4 pointer-events-none">
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={title}
+                    className="bg-card border border-foreground rounded-card shadow-stamp max-w-sm w-full animate-scale-in pointer-events-auto p-8"
+                >
+                    <h2 className="font-display text-3xl font-bold uppercase leading-none text-foreground mb-3">{title}</h2>
+                    {children}
+                </div>
+            </div>
+        </>
+    );
+}
+
 export default function Sidebar({
     currentEmail,
     onSelectCV,
@@ -52,16 +75,17 @@ export default function Sidebar({
 }: SidebarProps) {
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useI18n();
+    const s = t.sidebar;
     const [cvs, setCvs] = useState<CVData[]>([]);
     const [loading, setLoading] = useState(true);
     const [archivedCvs, setArchivedCvs] = useState<CVData[]>([]);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-    const [deleteConfirmEmail, setDeleteConfirmEmail] = useState<string | null>(
-        null,
-    );
+    const [deleteTarget, setDeleteTarget] = useState<CVData | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [importing, setImporting] = useState(false);
     const [pendingImport, setPendingImport] = useState<CVData | null>(null);
     const [toast, setToast] = useState<{
         type: "success" | "error";
@@ -104,18 +128,13 @@ export default function Sidebar({
         setIsMobileOpen(false);
     };
 
-    const handlePreview = (email: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        navigate(`/cv/${generateSlug(email)}`);
-        setIsMobileOpen(false);
-    };
-
     const handleDelete = async (email: string) => {
         await deleteCVByEmail(email);
-        setDeleteConfirmEmail(null);
-        setOpenDropdown(null);
+        setDeleteTarget(null);
         await loadData();
         if (currentEmail === email) {
+            // Clear the open form too, or auto-save would write the deleted CV back.
+            onSelectCV?.("");
             navigate("/create");
         }
     };
@@ -127,7 +146,7 @@ export default function Sidebar({
 
     const handleExport = (cv: CVData) => {
         downloadCVJson(cv);
-        setToast({ type: "success", message: `Exported ${cv.fullName}` });
+        setToast({ type: "success", message: fill(s.toastExported, { name: cv.fullName }) });
     };
 
     const importCV = async (cv: CVData) => {
@@ -137,10 +156,10 @@ export default function Sidebar({
             await loadData();
             handleSelect(cv.email);
             onImported?.(cv.email);
-            setToast({ type: "success", message: `Imported ${cv.fullName}` });
+            setToast({ type: "success", message: fill(s.toastImported, { name: cv.fullName }) });
         } catch (err) {
             console.error("Import failed:", err);
-            setToast({ type: "error", message: "Failed to save imported CV." });
+            setToast({ type: "error", message: s.toastImportFailed });
         } finally {
             setPendingImport(null);
         }
@@ -152,15 +171,19 @@ export default function Sidebar({
         const file = e.target.files?.[0];
         e.target.value = ""; // allow picking the same file again
         if (!file) return;
+        setImporting(true);
         try {
             const cv = parseCVJson(await file.text());
             if (await getCVByEmail(cv.email)) setPendingImport(cv);
             else await importCV(cv);
         } catch (err) {
+            const code = err instanceof Error ? err.message : "";
             setToast({
                 type: "error",
-                message: err instanceof Error ? err.message : "Import failed.",
+                message: code in s.importErrors ? s.importErrors[code as keyof typeof s.importErrors] : s.importErrors.generic,
             });
+        } finally {
+            setImporting(false);
         }
     };
 
@@ -172,14 +195,92 @@ export default function Sidebar({
 
     const displayCvs = showArchived ? archivedCvs : cvs;
 
+    const renderMenu = (cv: CVData) => (
+        <div className="absolute right-0 mt-1 w-44 bg-card border border-foreground rounded-2xl shadow-stamp z-50 overflow-hidden animate-fade-in">
+            <button
+                className={cn(menuItem, "text-foreground")}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/cv/${generateSlug(cv.email)}`);
+                    setIsMobileOpen(false);
+                    setOpenDropdown(null);
+                }}
+            >
+                <Eye className="w-4 h-4 text-primary/70" aria-hidden="true" />
+                {s.preview}
+            </button>
+            <button
+                className={cn(menuItem, "text-foreground")}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleExport(cv);
+                    setOpenDropdown(null);
+                }}
+            >
+                <Download className="w-4 h-4 text-info/70" aria-hidden="true" />
+                {s.exportJson}
+            </button>
+            <button
+                className={cn(menuItem, "text-foreground")}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleArchive(cv.email);
+                    setOpenDropdown(null);
+                }}
+            >
+                {cv.isArchived ? (
+                    <>
+                        <ArchiveRestore className="w-4 h-4 text-warning/70" aria-hidden="true" />
+                        {s.unarchive}
+                    </>
+                ) : (
+                    <>
+                        <Archive className="w-4 h-4 text-warning/70" aria-hidden="true" />
+                        {s.archive}
+                    </>
+                )}
+            </button>
+            <button
+                className={cn(menuItem, "text-destructive hover:bg-destructive/10")}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteTarget(cv);
+                    setOpenDropdown(null);
+                }}
+            >
+                <Trash2 className="w-4 h-4" aria-hidden="true" />
+                {s.delete}
+            </button>
+        </div>
+    );
+
+    const tab = (archived: boolean, label: string, count: number) => (
+        <button
+            onClick={() => setShowArchived(archived)}
+            aria-pressed={showArchived === archived}
+            className={cn(
+                "flex-1 text-xs py-1.5 px-2 rounded-full font-bold transition-colors",
+                showArchived === archived
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary",
+            )}
+        >
+            {label}
+            <span className="ml-1 inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-marigold text-forest text-[10px] tabular-nums">
+                {count}
+            </span>
+        </button>
+    );
+
     const sidebarContent = (
         <div className="flex flex-col h-full">
             {/* Logo */}
             <div className="p-4 border-b border-forest/15">
                 <div className="flex items-center justify-between">
-                    <div
+                    <button
+                        type="button"
                         className={cn(
-                            "group flex items-center gap-2.5 cursor-pointer relative",
+                            "group flex items-center gap-2.5 cursor-pointer relative text-left",
                             isCollapsed && "justify-center w-9 h-9",
                         )}
                         onClick={() => {
@@ -189,9 +290,10 @@ export default function Sidebar({
                                 navigate("/");
                             }
                         }}
-                        title={isCollapsed ? "Expand sidebar" : "Go to home"}
+                        title={isCollapsed ? s.expand : s.goHome}
+                        aria-label={isCollapsed ? s.expand : `${t.common.brand} — ${s.goHome}`}
                     >
-                        <div className="w-9 h-9 flex items-center justify-center shrink-0 relative">
+                        <span className="w-9 h-9 flex items-center justify-center shrink-0 relative">
                             <LogoMark
                                 className={cn(
                                     "w-9 h-9 transition-opacity",
@@ -200,28 +302,27 @@ export default function Sidebar({
                             />
                             {isCollapsed && (
                                 <span className="absolute inset-0 rounded-[10px] bg-forest flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <ChevronRight className="w-4 h-4 text-cream" />
+                                    <ChevronRight className="w-4 h-4 text-cream" aria-hidden="true" />
                                 </span>
                             )}
-                        </div>
-                        {!isCollapsed && (
-                            <h1>
-                                <Wordmark className="text-[13px]" />
-                            </h1>
-                        )}
-                    </div>
-                    {/* Collapse button - desktop only */}
-                    <button
-                        onClick={() => onToggleSidebar?.()}
-                        className="hidden lg:flex w-6 h-6 rounded items-center justify-center hover:bg-muted/50 text-muted-foreground transition-colors"
-                    >
-                        {!isCollapsed && (
-                            <ChevronLeft className="w-3.5 h-3.5" />
-                        )}
+                        </span>
+                        {!isCollapsed && <Wordmark className="text-[13px]" />}
                     </button>
+                    {/* Collapse button - desktop only */}
+                    {!isCollapsed && (
+                        <button
+                            onClick={() => onToggleSidebar?.()}
+                            aria-label={s.collapse}
+                            title={s.collapse}
+                            className="hidden lg:flex w-6 h-6 rounded items-center justify-center hover:bg-muted/50 text-muted-foreground transition-colors"
+                        >
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                    )}
                     {/* Close button - mobile only */}
                     <button
                         onClick={() => setIsMobileOpen(false)}
+                        aria-label={s.closeMenu}
                         className="lg:hidden flex w-6 h-6 rounded items-center justify-center hover:bg-muted/50 text-muted-foreground"
                     >
                         <X className="w-4 h-4" />
@@ -232,90 +333,74 @@ export default function Sidebar({
             {/* New CV + Import buttons */}
             <div className={cn("p-3 flex gap-2", isCollapsed && "flex-col")}>
                 <Button
-                   
                     size={isCollapsed ? "icon" : "sm"}
                     className={cn("flex-1", isCollapsed && "w-8 h-8 flex-none")}
                     onClick={handleNewCV}
+                    aria-label={s.newCV}
                 >
-                    <Plus className="w-4 h-4" />
-                    {!isCollapsed && <span className="ml-1">New CV</span>}
+                    <Plus className="w-4 h-4" aria-hidden="true" />
+                    {!isCollapsed && <span className="ml-1">{s.newCV}</span>}
                 </Button>
                 <Button
                     variant="outline"
                     size={isCollapsed ? "icon" : "sm"}
                     className={cn(isCollapsed && "w-8 h-8")}
                     onClick={() => fileInputRef.current?.click()}
-                    title="Import CV from JSON"
+                    disabled={importing}
+                    title={s.importTitle}
+                    aria-label={s.importTitle}
                 >
-                    <Upload className="w-4 h-4" />
-                    {!isCollapsed && <span>Import</span>}
+                    {importing ? (
+                        <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                        <Upload className="w-4 h-4" aria-hidden="true" />
+                    )}
+                    {!isCollapsed && <span>{importing ? s.importing : s.import}</span>}
                 </Button>
             </div>
 
             {/* Tabs: Active / Archived */}
             {!isCollapsed && (
                 <div className="px-3 flex gap-1">
-                    <button
-                        onClick={() => setShowArchived(false)}
-                        className={cn(
-                            "flex-1 text-xs py-1.5 px-2 rounded-full font-bold transition-colors",
-                            !showArchived
-                                ? "bg-primary text-primary-foreground"
-                                : "text-muted-foreground hover:text-foreground hover:bg-secondary",
-                        )}
-                    >
-                        Active 
-                        <span className="ml-1 inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-marigold text-forest text-[10px] tabular-nums">
-                            {cvs.length}
-                        </span>
-                    </button>
-                    <button
-                        onClick={() => setShowArchived(true)}
-                        className={cn(
-                            "flex-1 text-xs py-1.5 px-2 rounded-full font-bold transition-colors",
-                            showArchived
-                                ? "bg-primary text-primary-foreground"
-                                : "text-muted-foreground hover:text-foreground hover:bg-secondary",
-                        )}
-                    >
-                        Archived 
-                        <span className="ml-1 inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-marigold text-forest text-[10px] tabular-nums">
-                            {archivedCvs.length}
-                        </span>
-                    </button>
+                    {tab(false, s.active, cvs.length)}
+                    {tab(true, s.archived, archivedCvs.length)}
                 </div>
             )}
 
             {/* CV List */}
-            <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-                {loading &&
-                    [0, 1, 2].map((i) => (
-                        <div
-                            key={i}
-                            aria-hidden="true"
-                            className={cn("flex items-center gap-2.5 p-2.5", isCollapsed && "justify-center p-2")}
-                        >
-                            <Skeleton className="w-8 h-8 shrink-0" />
-                            {!isCollapsed && (
-                                <div className="flex-1 space-y-1.5">
-                                    <Skeleton className="h-3 w-3/4" />
-                                    <Skeleton className="h-2 w-1/2" />
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                {!loading && displayCvs.length === 0 && (
-                    <div className="text-center py-8 px-3">
-                        {!isCollapsed && (
-                            <>
-                                <SmallCactus className="w-14 mx-auto mb-3 text-forest origin-bottom animate-sway" />
-                                <p className="text-xs font-bold text-muted-foreground">
-                                    {showArchived
-                                        ? "No archived CVs"
-                                        : "No CVs yet. Build one!"}
-                                </p>
-                            </>
+            <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5" aria-busy={loading}>
+                {loading && (
+                    <div aria-label={s.loading}>
+                        {[0, 1, 2].map((i) => (
+                            <div
+                                key={i}
+                                aria-hidden="true"
+                                className={cn("flex items-center gap-2.5 p-2.5", isCollapsed && "justify-center p-2")}
+                            >
+                                <Skeleton className="w-8 h-8 shrink-0" />
+                                {!isCollapsed && (
+                                    <div className="flex-1 space-y-1.5">
+                                        <Skeleton className="h-3 w-3/4" />
+                                        <Skeleton className="h-2 w-1/2" />
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {!loading && displayCvs.length === 0 && !isCollapsed && (
+                    <div className="text-center py-8 px-4">
+                        {showArchived ? (
+                            <span className="w-12 h-12 mx-auto mb-3 rounded-full bg-secondary border border-forest/30 flex items-center justify-center" aria-hidden="true">
+                                <Archive className="w-5 h-5" strokeWidth={1.75} />
+                            </span>
+                        ) : (
+                            <SmallCactus className="w-14 mx-auto mb-3 text-forest origin-bottom animate-sway" />
                         )}
+                        <p className="text-sm font-bold">{showArchived ? s.emptyArchived : s.emptyActive}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {showArchived ? s.emptyArchivedHint : s.emptyActiveHint}
+                        </p>
                     </div>
                 )}
                 {displayCvs.map((cv) => {
@@ -338,265 +423,51 @@ export default function Sidebar({
                                     isCollapsed && "justify-center p-2",
                                 )}
                                 onClick={() => handleSelect(cv.email)}
+                                title={isCollapsed ? cv.fullName : undefined}
                             >
                                 {/* Avatar */}
                                 <div
                                     className={cn(
-                                        "shrink-0 rounded-full flex items-center justify-center font-display text-sm font-bold border",
+                                        "shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-display text-sm font-bold border",
                                         isActive
-                                            ? "w-8 h-8 bg-marigold text-forest border-foreground"
-                                            : "w-8 h-8 bg-card text-forest border-forest/30",
+                                            ? "bg-marigold text-forest border-foreground"
+                                            : "bg-card text-forest border-forest/30",
                                     )}
+                                    aria-hidden="true"
                                 >
                                     {cv.fullName.charAt(0).toUpperCase()}
                                 </div>
 
                                 {!isCollapsed && (
-                                    <div className="flex-1 min-w-0">
-                                        <p
-                                            className={cn(
-                                                "text-sm font-bold truncate",
-                                                isActive
-                                                    ? "text-primary"
-                                                    : "text-foreground",
-                                            )}
-                                        >
+                                    <div className="flex-1 min-w-0 pr-6">
+                                        <p className={cn("text-sm font-bold truncate", isActive ? "text-primary" : "text-foreground")}>
                                             {cv.fullName}
                                         </p>
-                                        <p className="text-[10px] text-muted-foreground truncate">
-                                            {cv.email}
-                                        </p>
+                                        <p className="text-[10px] text-muted-foreground truncate">{cv.email}</p>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Actions - Three-dot menu */}
+                            {/* Three-dot menu: always visible on touch screens, on hover for desktop */}
                             {!isCollapsed && (
-                                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 hidden lg:group-hover:flex lg:hidden md:flex items-center">
+                                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex lg:hidden lg:group-hover:flex lg:group-focus-within:flex items-center">
                                     <div className="relative">
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setOpenDropdown(
-                                                    openDropdown === cv.email
-                                                        ? null
-                                                        : cv.email,
-                                                );
+                                                setOpenDropdown(openDropdown === cv.email ? null : cv.email);
                                             }}
                                             className="p-1.5 rounded-full hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
-                                            title="More options"
+                                            title={s.moreOptions}
+                                            aria-label={`${s.moreOptions}: ${cv.fullName}`}
+                                            aria-expanded={openDropdown === cv.email}
                                         >
                                             <MoreVertical className="w-4 h-4" />
                                         </button>
-
-                                        {/* Dropdown menu */}
-                                        {openDropdown === cv.email && (
-                                            <div className="absolute right-0 mt-1 w-44 bg-card border border-foreground rounded-2xl shadow-stamp z-50 overflow-hidden animate-fade-in">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handlePreview(
-                                                            cv.email,
-                                                            e,
-                                                        );
-                                                        setOpenDropdown(null);
-                                                    }}
-                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors border-b border-forest/10 last:border-b-0"
-                                                >
-                                                    <Eye className="w-4 h-4 text-primary/70" />
-                                                    Preview
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleExport(cv);
-                                                        setOpenDropdown(null);
-                                                    }}
-                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors border-b border-forest/10 last:border-b-0"
-                                                >
-                                                    <Download className="w-4 h-4 text-info/70" />
-                                                    Export JSON
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleArchive(cv.email);
-                                                        setOpenDropdown(null);
-                                                    }}
-                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors border-b border-forest/10 last:border-b-0"
-                                                >
-                                                    {cv.isArchived ? (
-                                                        <>
-                                                            <ArchiveRestore className="w-4 h-4 text-warning/70" />
-                                                            Unarchive
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Archive className="w-4 h-4 text-warning/70" />
-                                                            Archive
-                                                        </>
-                                                    )}
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setDeleteConfirmEmail(
-                                                            cv.email,
-                                                        );
-                                                        setOpenDropdown(null);
-                                                    }}
-                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors border-b border-forest/10 last:border-b-0"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        )}
+                                        {openDropdown === cv.email && renderMenu(cv)}
                                     </div>
                                 </div>
                             )}
-
-                            {/* Mobile actions - Always show on mobile */}
-                            {!isCollapsed && (
-                                <div className="md:hidden flex lg:hidden items-center absolute right-2.5 top-1/2 -translate-y-1/2">
-                                    <div className="relative">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setOpenDropdown(
-                                                    openDropdown === cv.email
-                                                        ? null
-                                                        : cv.email,
-                                                );
-                                            }}
-                                            className="p-1.5 rounded-full hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
-                                            title="More options"
-                                        >
-                                            <MoreVertical className="w-4 h-4" />
-                                        </button>
-
-                                        {/* Dropdown menu for mobile */}
-                                        {openDropdown === cv.email && (
-                                            <div className="absolute right-0 mt-1 w-44 bg-card border border-foreground rounded-2xl shadow-stamp z-50 overflow-hidden animate-fade-in">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handlePreview(
-                                                            cv.email,
-                                                            e,
-                                                        );
-                                                        setOpenDropdown(null);
-                                                    }}
-                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors border-b border-forest/10 last:border-b-0"
-                                                >
-                                                    <Eye className="w-4 h-4 text-primary/70" />
-                                                    Preview
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleExport(cv);
-                                                        setOpenDropdown(null);
-                                                    }}
-                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors border-b border-forest/10 last:border-b-0"
-                                                >
-                                                    <Download className="w-4 h-4 text-info/70" />
-                                                    Export JSON
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleArchive(cv.email);
-                                                        setOpenDropdown(null);
-                                                    }}
-                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-secondary transition-colors border-b border-forest/10 last:border-b-0"
-                                                >
-                                                    {cv.isArchived ? (
-                                                        <>
-                                                            <ArchiveRestore className="w-4 h-4 text-warning/70" />
-                                                            Unarchive
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Archive className="w-4 h-4 text-warning/70" />
-                                                            Archive
-                                                        </>
-                                                    )}
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setDeleteConfirmEmail(
-                                                            cv.email,
-                                                        );
-                                                        setOpenDropdown(null);
-                                                    }}
-                                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors border-b border-forest/10 last:border-b-0"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Delete Confirmation Modal - Portalled to body */}
-                            {deleteConfirmEmail === cv.email &&
-                                createPortal(
-                                    <>
-                                        {/* Modal backdrop */}
-                                        <div
-                                            className="fixed inset-0 bg-forest/40 backdrop-blur-sm z-[100] animate-fade-in"
-                                            onClick={() =>
-                                                setDeleteConfirmEmail(null)
-                                            }
-                                        />
-                                        {/* Modal */}
-                                        <div className="fixed inset-0 flex items-center justify-center z-[101] animate-fade-in p-4">
-                                            <div className="bg-card border border-foreground rounded-card shadow-stamp max-w-sm w-full animate-scale-in">
-                                                <div className="p-8">
-                                                    <h2 className="font-display text-3xl font-bold uppercase leading-none text-foreground mb-3">
-                                                        Delete CV
-                                                    </h2>
-                                                    <p className="text-sm text-muted-foreground mb-6">
-                                                        Are you sure you want to
-                                                        delete{" "}
-                                                        <span className="font-medium text-foreground">
-                                                            {cv.fullName}
-                                                        </span>
-                                                        ? This action cannot be
-                                                        undone.
-                                                    </p>
-                                                    <div className="flex gap-3 justify-end">
-                                                        <Button
-                                                            variant="ghost"
-                                                            onClick={() =>
-                                                                setDeleteConfirmEmail(
-                                                                    null,
-                                                                )
-                                                            }
-                                                        >
-                                                            Cancel
-                                                        </Button>
-                                                        <Button
-                                                            variant="destructive"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    cv.email,
-                                                                )
-                                                            }
-                                                        >
-                                                            Delete
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </>,
-                                    document.body,
-                                )}
                         </div>
                     );
                 })}
@@ -614,55 +485,47 @@ export default function Sidebar({
                 onChange={handleImportFile}
             />
 
-            {/* Import conflict modal */}
-            {pendingImport && (
-                <>
-                    <div
-                        className="fixed inset-0 bg-forest/40 backdrop-blur-sm z-[100] animate-fade-in"
-                        onClick={() => setPendingImport(null)}
-                    />
-                    <div className="fixed inset-0 flex items-center justify-center z-[101] animate-fade-in p-4 pointer-events-none">
-                        <div className="bg-card border border-foreground rounded-card shadow-stamp max-w-sm w-full animate-scale-in pointer-events-auto">
-                            <div className="p-8">
-                                <h2 className="font-display text-3xl font-bold uppercase leading-none text-foreground mb-3">
-                                    Replace existing CV?
-                                </h2>
-                                <p className="text-sm text-muted-foreground mb-6">
-                                    A CV for{" "}
-                                    <span className="font-medium text-foreground break-all">
-                                        {pendingImport.email}
-                                    </span>{" "}
-                                    already exists. Importing will overwrite it
-                                    with{" "}
-                                    <span className="font-medium text-foreground">
-                                        {pendingImport.fullName}
-                                    </span>{" "}
-                                    from the file. This action cannot be undone.
-                                </p>
-                                <div className="flex gap-3 justify-end">
-                                    <Button
-                                        variant="ghost"
-                                        onClick={() => setPendingImport(null)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        variant="destructive"
-                                        onClick={() => importCV(pendingImport)}
-                                    >
-                                        Replace
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
+            {deleteTarget && (
+                <Modal title={s.deleteTitle} onClose={() => setDeleteTarget(null)}>
+                    <p className="text-sm text-muted-foreground mb-6">
+                        {rich(s.deleteBody, {
+                            name: <span className="font-bold text-foreground">{deleteTarget.fullName}</span>,
+                        })}
+                    </p>
+                    <div className="flex gap-3 justify-end">
+                        <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+                            {t.common.cancel}
+                        </Button>
+                        <Button variant="destructive" onClick={() => handleDelete(deleteTarget.email)}>
+                            {t.common.delete}
+                        </Button>
                     </div>
-                </>
+                </Modal>
+            )}
+
+            {pendingImport && (
+                <Modal title={s.replaceTitle} onClose={() => setPendingImport(null)}>
+                    <p className="text-sm text-muted-foreground mb-6">
+                        {rich(s.replaceBody, {
+                            email: <span className="font-bold text-foreground break-all">{pendingImport.email}</span>,
+                            name: <span className="font-bold text-foreground">{pendingImport.fullName}</span>,
+                        })}
+                    </p>
+                    <div className="flex gap-3 justify-end">
+                        <Button variant="ghost" onClick={() => setPendingImport(null)}>
+                            {t.common.cancel}
+                        </Button>
+                        <Button variant="destructive" onClick={() => importCV(pendingImport)}>
+                            {t.common.replace}
+                        </Button>
+                    </div>
+                </Modal>
             )}
 
             {/* Toast */}
             {toast && (
                 <div
-                    role="status"
+                    role={toast.type === "error" ? "alert" : "status"}
                     className={cn(
                         "fixed bottom-4 left-4 right-4 sm:left-auto sm:max-w-sm z-[110] flex items-center gap-2.5 px-5 py-3 rounded-full text-sm font-bold animate-slide-up",
                         toast.type === "success"
@@ -671,9 +534,9 @@ export default function Sidebar({
                     )}
                 >
                     {toast.type === "success" ? (
-                        <CircleCheck className="w-4 h-4 text-marigold shrink-0" />
+                        <CircleCheck className="w-4 h-4 text-marigold shrink-0" aria-hidden="true" />
                     ) : (
-                        <CircleAlert className="w-4 h-4 shrink-0" />
+                        <CircleAlert className="w-4 h-4 shrink-0" aria-hidden="true" />
                     )}
                     <span>{toast.message}</span>
                 </div>
@@ -682,6 +545,7 @@ export default function Sidebar({
             {/* Mobile hamburger */}
             <button
                 onClick={() => setIsMobileOpen(true)}
+                aria-label={s.openMenu}
                 className="fixed top-3 left-3 z-[60] lg:hidden w-9 h-9 rounded-full bg-card border border-foreground flex items-center justify-center text-foreground hover:bg-muted/50 transition-colors"
             >
                 <Menu className="w-4 h-4" />
@@ -697,6 +561,7 @@ export default function Sidebar({
 
             {/* Mobile sidebar */}
             <div
+                inert={!isMobileOpen}
                 className={cn(
                     "fixed top-0 left-0 h-full w-72 z-[80] bg-card border-r border-foreground transition-transform duration-300 lg:hidden",
                     isMobileOpen ? "translate-x-0" : "-translate-x-full",

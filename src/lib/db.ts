@@ -155,7 +155,7 @@ export function decodeCVShare(data: string): CVData {
     const bin = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4))
     text = new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(bin, c => c.charCodeAt(0)))
   } catch {
-    throw new Error('This share link is broken or incomplete.')
+    throw new Error('broken_link')
   }
   return parseCVJson(text)
 }
@@ -167,17 +167,18 @@ const objList = (v: unknown): Record<string, unknown>[] =>
   Array.isArray(v) ? v.filter(o => o !== null && typeof o === 'object') : []
 
 // Imported files are untrusted: keep only known fields, coerce types, fill defaults.
+// Throws Error('invalid_json' | 'not_cv'); the UI translates the code.
 export function parseCVJson(text: string): CVData {
   let raw: Record<string, unknown>
   try {
     raw = JSON.parse(text)
   } catch {
-    throw new Error('File is not valid JSON.')
+    throw new Error('invalid_json')
   }
   const email = str(raw?.email).trim().toLowerCase()
   const fullName = str(raw?.fullName).trim()
   if (!email || !fullName || !Array.isArray(raw.workExperiences) || !Array.isArray(raw.skills)) {
-    throw new Error('Not a CV ATS Friendly Builder file: email, fullName, workExperiences or skills is missing.')
+    throw new Error('not_cv')
   }
   const now = new Date()
   return {

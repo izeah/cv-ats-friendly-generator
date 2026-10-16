@@ -16,9 +16,15 @@ const stroke = {
 } as const;
 
 /** Brand mark: a CV sheet crossed by a Marigold ATS scan beam, plus a builder sparkle. */
-export function LogoMark({ className, animated = true }: { className?: string; animated?: boolean }) {
+/** Decorative by default; pass `label` when the mark stands alone so screen readers announce it. */
+export function LogoMark({ className, animated = true, label }: { className?: string; animated?: boolean; label?: string }) {
     return (
-        <svg viewBox="0 0 64 64" className={cn("shrink-0", className)} aria-hidden="true">
+        <svg
+            viewBox="0 0 64 64"
+            className={cn("shrink-0", className)}
+            {...(label ? { role: "img", "aria-label": label } : { "aria-hidden": true })}
+        >
+            {label && <title>{label}</title>}
             <rect width="64" height="64" rx="16" className="fill-forest" />
             <path d="M20 11h15l9 9v31a2 2 0 0 1-2 2H20a2 2 0 0 1-2-2V13a2 2 0 0 1 2-2z" className="fill-parchment" />
             <path d="M35 11v7a2 2 0 0 0 2 2h7z" className="fill-sage" />
