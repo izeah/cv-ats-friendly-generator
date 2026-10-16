@@ -24,6 +24,7 @@ function useSections() {
     return [
         { href: "/#features", label: t.nav.features },
         { href: "/#how", label: t.nav.how },
+        { href: "/#share", label: t.nav.share },
         { href: "/#stories", label: t.nav.testimonials },
         { href: "/#faq", label: t.nav.faq },
     ];

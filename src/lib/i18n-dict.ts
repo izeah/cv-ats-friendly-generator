@@ -49,7 +49,7 @@ export const en = {
     logoAlt: 'CV ATS Friendly Builder logo',
     freeNoSignup: 'Free · No accounts',
   },
-  nav: { features: 'What you get', how: 'How to use', testimonials: 'What they say', faq: 'FAQ', open: 'Open menu', close: 'Close menu' },
+  nav: { features: 'What you get', how: 'How to use', share: 'Send to recruiters', testimonials: 'What they say', faq: 'FAQ', open: 'Open menu', close: 'Close menu' },
   hero: {
     badgeFree: 'Free',
     badgeNoSignup: 'No accounts',
@@ -471,7 +471,7 @@ export const id: Dict = {
     logoAlt: 'Logo CV ATS Friendly Builder',
     freeNoSignup: 'Gratis · Tanpa akun',
   },
-  nav: { features: 'Yang kamu dapat', how: 'Cara pakai', testimonials: 'Kata mereka', faq: 'FAQ', open: 'Buka menu', close: 'Tutup menu' },
+  nav: { features: 'Yang kamu dapat', how: 'Cara pakai', share: 'Kirim ke recruiter', testimonials: 'Kata mereka', faq: 'FAQ', open: 'Buka menu', close: 'Tutup menu' },
   hero: {
     badgeFree: 'Gratis',
     badgeNoSignup: 'Tanpa akun',

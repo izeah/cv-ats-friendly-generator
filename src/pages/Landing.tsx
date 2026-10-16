@@ -173,7 +173,7 @@ export default function Landing() {
       </section>
 
       {/* Chat bubbles */}
-      <section className="max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
+      <section id="share" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div>
             <SectionHeading title={<>{t.sharing.titleA}<br />{t.sharing.titleB}</>} />
