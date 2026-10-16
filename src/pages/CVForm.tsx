@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -623,34 +623,35 @@ export default function CVForm() {
         setSaveError(false);
     };
 
-    const loadCVData = async (targetEmail: string) => {
-        const existing = await getCVByEmail(targetEmail.trim().toLowerCase());
-        if (existing) {
-            setFullName(existing.fullName);
-            setOccupation(existing.occupation || "");
-            setEmail(existing.email);
-            setPhone(existing.phone);
-            setCity(existing.city);
-            setAbout(existing.about || "");
-            setSkills(existing.skills);
-            setWorkExperiences(
-                existing.workExperiences.length > 0
-                    ? existing.workExperiences
-                    : [createEmptyExperience()],
-            );
-        }
-        setLoadedFor(targetEmail);
-    };
+    const loadCVData = (targetEmail: string) =>
+        getCVByEmail(targetEmail.trim().toLowerCase()).then((existing) => {
+            if (existing) {
+                setFullName(existing.fullName);
+                setOccupation(existing.occupation || "");
+                setEmail(existing.email);
+                setPhone(existing.phone);
+                setCity(existing.city);
+                setAbout(existing.about || "");
+                setSkills(existing.skills);
+                setWorkExperiences(
+                    existing.workExperiences.length > 0
+                        ? existing.workExperiences
+                        : [createEmptyExperience()],
+                );
+            }
+            setLoadedFor(targetEmail);
+        });
 
-    // Auto-load from URL param on mount / URL change
+    // Auto-load from URL param on mount / URL change; leaving ?email= clears the form.
     const emailParam = searchParams.get("email");
     const loadingCV = !!emailParam && loadedFor !== emailParam;
+    const [prevEmailParam, setPrevEmailParam] = useState(emailParam);
+    if (emailParam !== prevEmailParam) {
+        setPrevEmailParam(emailParam);
+        if (!emailParam) resetForm();
+    }
     useEffect(() => {
-        if (emailParam) {
-            loadCVData(emailParam);
-        } else {
-            resetForm();
-        }
+        if (emailParam) loadCVData(emailParam);
     }, [emailParam]);
 
     const handleSidebarSelect = (selectedEmail: string) => {
@@ -684,7 +685,7 @@ export default function CVForm() {
         setSkillInput("");
     };
 
-    const buildCV = (): CVData => ({
+    const buildCV = useCallback((): CVData => ({
         email: email.trim().toLowerCase(),
         fullName: fullName.trim(),
         occupation: occupation.trim(),
@@ -696,7 +697,7 @@ export default function CVForm() {
         isArchived: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-    });
+    }), [email, fullName, occupation, phone, city, about, workExperiences, skills]);
 
     const handleSave = async (preview: boolean = false) => {
         setSubmitted(true);
@@ -744,7 +745,7 @@ export default function CVForm() {
         }, 10000);
 
         return () => clearInterval(autoSaveInterval);
-    }, [fullName, email, phone, city, about, workExperiences, skills]);
+    }, [fullName, email, buildCV]);
 
     const saveIcon = savingMode === "save"
         ? <LoaderCircle className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />

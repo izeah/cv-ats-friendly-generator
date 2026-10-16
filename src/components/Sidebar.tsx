@@ -98,15 +98,13 @@ export default function Sidebar({
         return () => clearTimeout(timer);
     }, [toast]);
 
-    const loadData = async () => {
-        const [active, archived] = await Promise.all([
-            getAllCVs(false),
-            getArchivedCVs(),
-        ]);
-        setCvs(active);
-        setArchivedCvs(archived);
-        setLoading(false);
-    };
+    // setState in the .then callback, not the effect body: the effect only kicks off the IndexedDB read.
+    const loadData = () =>
+        Promise.all([getAllCVs(false), getArchivedCVs()]).then(([active, archived]) => {
+            setCvs(active);
+            setArchivedCvs(archived);
+            setLoading(false);
+        });
 
     useEffect(() => {
         loadData();

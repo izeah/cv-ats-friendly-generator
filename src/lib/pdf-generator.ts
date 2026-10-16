@@ -15,9 +15,7 @@ const MARGIN_BOTTOM = 18;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 const LINE_HEIGHT = 5.2;
 const SECTION_GAP = 6;
-const ACCENT_COLOR: [number, number, number] = [79, 70, 229]; // Indigo-600
 const TEXT_COLOR: [number, number, number] = [15, 23, 42]; // Slate-900
-const MUTED_COLOR: [number, number, number] = [100, 116, 139]; // Slate-500
 const DARK_COLOR: [number, number, number] = [30, 41, 59]; // Slate-800
 
 export interface PDFLabels {
