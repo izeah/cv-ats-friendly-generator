@@ -7,14 +7,14 @@ import {
     FolderKanban,
     Code2,
     Download,
-    Eye,
     Braces,
     Link2,
-    PenLine,
     type LucideIcon,
 } from "lucide-react";
 import { cn, prefersReducedMotion } from "@/lib/utils";
 import { LogoMark } from "@/components/Illustrations";
+import { ExportVignette, FormVignette, PreviewVignette } from "@/components/Vignettes";
+import { useI18n } from "@/lib/i18n";
 import { useInView } from "@/lib/useInView";
 
 const delay = (ms: number): CSSProperties => ({
@@ -49,31 +49,32 @@ function NodePill({
     );
 }
 
-function Hub({ className }: { className?: string }) {
+function Hub({ className, label }: { className?: string; label: string }) {
     return (
         <div className={cn("relative aspect-square", className)}>
             <div className="absolute -inset-[30%] rounded-full bg-marigold blur-2xl animate-hub-glow" />
             <div className="reveal relative w-full h-full rounded-full bg-forest text-cream border-2 border-forest flex flex-col items-center justify-center text-center shadow-stamp-cream">
                 <LogoMark className="w-[42%] h-[42%] mb-1.5" />
                 <span className="text-[10px] font-bold uppercase tracking-wider text-cream/80">
-                    ATS formatter
+                    {label}
                 </span>
             </div>
         </div>
     );
 }
 
+// Labels come from the dictionary (t.how.inputs / t.how.outputs), in this order.
 const INPUTS = [
-    { label: "Profile", icon: User, y: 70 },
-    { label: "Experience", icon: Briefcase, y: 170 },
-    { label: "Projects", icon: FolderKanban, y: 270 },
-    { label: "Skills", icon: Code2, y: 370 },
+    { icon: User, y: 70 },
+    { icon: Briefcase, y: 170 },
+    { icon: FolderKanban, y: 270 },
+    { icon: Code2, y: 370 },
 ];
 
 const OUTPUTS = [
-    { label: "PDF export", short: "PDF", icon: Download, y: 110 },
-    { label: "Share link", short: "Share", icon: Link2, y: 220 },
-    { label: "JSON backup", short: "JSON", icon: Braces, y: 330 },
+    { icon: Download, y: 110 },
+    { icon: Link2, y: 220 },
+    { icon: Braces, y: 330 },
 ];
 
 // Desktop canvas: 1000 x 440, hub centred at (500, 220) with radius 72.
@@ -103,12 +104,13 @@ function Connector({ d, order, live }: { d: string; order: number; live: boolean
 }
 
 export function PipelineDiagram() {
+    const { t } = useI18n();
     const [ref, inView] = useInView<HTMLDivElement>();
     const animate = inView && !prefersReducedMotion();
     const paths = [...INPUTS.map((n) => inPath(n.y)), ...OUTPUTS.map((n) => outPath(n.y))];
 
     return (
-        <div ref={ref} className={cn(inView && "in-view")}>
+        <div ref={ref} className={cn(inView && "in-view")} role="img" aria-label={t.how.diagramLabel}>
             {/* Desktop: horizontal pipeline */}
             <div className="relative hidden md:block" style={{ aspectRatio: `${W} / ${H}` }}>
                 <svg
@@ -136,9 +138,9 @@ export function PipelineDiagram() {
 
                 {INPUTS.map((n, i) => (
                     <NodePill
-                        key={n.label}
+                        key={n.y}
                         icon={n.icon}
-                        label={n.label}
+                        label={t.how.inputs[i]}
                         className="absolute -translate-y-1/2"
                         style={{
                             right: `${100 - (IN_X / W) * 100}%`,
@@ -149,9 +151,9 @@ export function PipelineDiagram() {
                 ))}
                 {OUTPUTS.map((n, i) => (
                     <NodePill
-                        key={n.label}
+                        key={n.y}
                         icon={n.icon}
-                        label={n.label}
+                        label={t.how.outputs[i].label}
                         className="absolute -translate-y-1/2"
                         style={{
                             left: `${(OUT_X / W) * 100}%`,
@@ -160,14 +162,14 @@ export function PipelineDiagram() {
                         }}
                     />
                 ))}
-                <Hub className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[14.4%]" />
+                <Hub label={t.how.hub} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[14.4%]" />
             </div>
 
             {/* Mobile: the same pipeline, top to bottom */}
             <div className="md:hidden flex flex-col items-center">
                 <div className="grid grid-cols-2 gap-3 w-full max-w-xs justify-items-center">
                     {INPUTS.map((n, i) => (
-                        <NodePill key={n.label} icon={n.icon} label={n.label} style={delay(i * 120)} />
+                        <NodePill key={n.y} icon={n.icon} label={t.how.inputs[i]} style={delay(i * 120)} />
                     ))}
                 </div>
                 <svg viewBox="0 0 320 70" className="w-full max-w-xs h-16" fill="none" strokeWidth={1.5} aria-hidden="true">
@@ -175,7 +177,7 @@ export function PipelineDiagram() {
                         <Connector key={d} d={d} order={i} live={inView} />
                     ))}
                 </svg>
-                <Hub className="w-32" />
+                <Hub label={t.how.hub} className="w-32" />
                 <svg viewBox="0 0 320 70" className="w-full max-w-xs h-16" fill="none" strokeWidth={1.5} aria-hidden="true">
                     {["M160 0C160 40 53 30 53 70", "M160 0V70", "M160 0C160 40 267 30 267 70"].map((d, i) => (
                         <Connector key={d} d={d} order={i + 2} live={inView} />
@@ -183,7 +185,7 @@ export function PipelineDiagram() {
                 </svg>
                 <div className="grid grid-cols-3 gap-2 w-full max-w-xs justify-items-center">
                     {OUTPUTS.map((n, i) => (
-                        <NodePill key={n.label} icon={n.icon} label={n.short} style={delay(900 + i * 120)} />
+                        <NodePill key={n.y} icon={n.icon} label={t.how.outputs[i].short} style={delay(900 + i * 120)} />
                     ))}
                 </div>
             </div>
@@ -191,23 +193,7 @@ export function PipelineDiagram() {
     );
 }
 
-const STEPS = [
-    {
-        icon: PenLine,
-        title: "Fill the form",
-        description: "Personal info, work history with project breakdowns, and the tech you ship with.",
-    },
-    {
-        icon: Eye,
-        title: "Preview & polish",
-        description: "See the formatted CV instantly. Jump back to edit as often as you like.",
-    },
-    {
-        icon: Download,
-        title: "Export & apply",
-        description: "Download a text-based PDF that ATS parsers read cleanly, or back it up as JSON.",
-    },
-];
+const STEP_SCENES = [FormVignette, PreviewVignette, ExportVignette];
 
 function Arrow({ vertical, order }: { vertical?: boolean; order: number }) {
     const d = vertical ? "M20 4V44M12 36L20 44L28 36" : "M4 20H76M68 12L76 20L68 28";
@@ -231,11 +217,14 @@ function Arrow({ vertical, order }: { vertical?: boolean; order: number }) {
 }
 
 export function StepFlow() {
+    const { t } = useI18n();
     const [ref, inView] = useInView<HTMLOListElement>();
     return (
         <ol ref={ref} className={cn("flex flex-col md:flex-row items-stretch", inView && "in-view")}>
-            {STEPS.map((step, i) => (
-                <li key={step.title} className="contents">
+            {t.how.steps.map((step, i) => {
+                const Scene = STEP_SCENES[i];
+                return (
+                <li key={i} className="contents">
                     {i > 0 && (
                         <>
                             <Arrow order={i} />
@@ -243,24 +232,25 @@ export function StepFlow() {
                         </>
                     )}
                     <div
-                        className="reveal flex-1 rounded-card border border-foreground bg-card shadow-stamp p-7 sm:p-8"
+                        className="reveal flex-1 rounded-card border border-foreground bg-card shadow-stamp p-4 sm:p-5"
                         style={delay(i * 350)}
                     >
-                        <div className="flex items-center justify-between mb-6">
-                            <span className="w-12 h-12 rounded-full bg-marigold border border-foreground flex items-center justify-center">
-                                <step.icon className="w-5 h-5" strokeWidth={1.75} />
-                            </span>
-                            <span className="font-display text-5xl font-bold text-forest/15 leading-none">
+                        <div className="relative">
+                            <Scene offset={i * 2} />
+                            <span className="absolute top-3 left-3 rounded-full bg-forest text-cream px-2.5 py-1 font-display text-sm font-bold leading-none">
                                 0{i + 1}
                             </span>
                         </div>
-                        <h3 className="font-display text-3xl font-bold uppercase tracking-[-0.03em] leading-none mb-3">
-                            {step.title}
-                        </h3>
-                        <p className="text-muted-foreground leading-relaxed">{step.description}</p>
+                        <div className="px-3 pt-6 pb-3">
+                            <h3 className="font-display text-3xl font-bold uppercase tracking-[-0.03em] leading-none mb-3">
+                                {step.title}
+                            </h3>
+                            <p className="text-muted-foreground leading-relaxed">{step.description}</p>
+                        </div>
                     </div>
                 </li>
-            ))}
+                );
+            })}
         </ol>
     );
 }

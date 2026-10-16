@@ -4,18 +4,9 @@ import { useEffect, useState } from "react";
 import { FileText, Paperclip } from "lucide-react";
 import { cn, prefersReducedMotion } from "@/lib/utils";
 import { useInView } from "@/lib/useInView";
+import { useLoop } from "@/lib/useLoop";
+import { useI18n } from "@/lib/i18n";
 import { Birds, Cactus, Cloud, PaperPlane, SmallCactus, Sun } from "@/components/Illustrations";
-
-/** Counts 0..steps-1 forever, one step per `ms`. */
-function useLoop(steps: number, ms: number, enabled: boolean) {
-    const [tick, setTick] = useState(0);
-    useEffect(() => {
-        if (!enabled) return;
-        const id = setInterval(() => setTick((t) => (t + 1) % steps), ms);
-        return () => clearInterval(id);
-    }, [steps, ms, enabled]);
-    return tick;
-}
 
 // Timeline, one step = 450ms: type name → fill sections → pop skills →
 // ATS scan sweeps → "Parsed" tags + "ATS-ready" stamp → hold → restart.
@@ -23,9 +14,9 @@ const STEPS = 26;
 const SCAN = 14;
 const DONE = 17;
 const SECTIONS = [
-    { label: "Summary", start: 3, parsedAt: 15, widths: [92, 78, 64] },
-    { label: "Experience", start: 6, parsedAt: 16, widths: [94, 82, 70, 52] },
-];
+    { key: "summary", start: 3, parsedAt: 15, widths: [92, 78, 64] },
+    { key: "experience", start: 6, parsedAt: 16, widths: [94, 82, 70, 52] },
+] as const;
 const SKILLS = ["Go", "PostgreSQL", "Kafka", "Docker"];
 const springy = "cubic-bezier(0.34, 1.56, 0.64, 1)";
 
@@ -44,6 +35,8 @@ function Dots({ className }: { className?: string }) {
 }
 
 export function HeroMockup() {
+    const { t } = useI18n();
+    const m = t.mockup;
     const reduced = prefersReducedMotion();
     const tick = useLoop(STEPS, 450, !reduced);
     const step = reduced ? STEPS - 1 : tick;
@@ -51,7 +44,7 @@ export function HeroMockup() {
     const grow = (n: number) => ({ transform: `scaleX(${on(n) ? 1 : 0})` });
 
     return (
-        <div className="relative mx-auto w-full max-w-[420px] lg:max-w-none">
+        <div className="relative mx-auto w-full max-w-[420px] lg:max-w-none" role="img" aria-label={m.label}>
             <div className="absolute -top-12 right-0 w-24 animate-float">
                 <Sun className="w-full text-forest animate-spin-slow" />
             </div>
@@ -60,7 +53,7 @@ export function HeroMockup() {
             <Cactus className="absolute -bottom-6 -right-6 sm:-right-14 w-28 sm:w-36 text-forest origin-bottom animate-sway" />
             <SmallCactus className="absolute -bottom-3 -left-8 w-14 text-forest origin-bottom animate-sway [animation-delay:-2s] hidden sm:block" />
 
-            <div className="relative rounded-card border border-foreground bg-card shadow-stamp rotate-[-1.5deg]">
+            <div className="relative rounded-card border border-foreground bg-card shadow-stamp rotate-[-1.5deg]" aria-hidden="true">
                 <div className="relative overflow-hidden rounded-card p-6 sm:p-8">
                     {step >= SCAN && step < DONE && (
                         <div
@@ -80,7 +73,7 @@ export function HeroMockup() {
                                 "jane-doe-cv.pdf"
                             ) : (
                                 <>
-                                    Building <Dots className="bg-cream" />
+                                    {m.building} <Dots className="bg-cream" />
                                 </>
                             )}
                         </span>
@@ -92,7 +85,7 @@ export function HeroMockup() {
                                 transitionTimingFunction: springy,
                             }}
                         >
-                            ATS-ready
+                            {m.ready}
                         </span>
                     </div>
 
@@ -109,16 +102,16 @@ export function HeroMockup() {
                         className="text-sm font-bold text-muted-foreground mt-1 mb-5 transition-all duration-500"
                         style={{ opacity: on(2) ? 1 : 0, transform: on(2) ? "none" : "translateY(6px)" }}
                     >
-                        Senior Backend Engineer · Jakarta
+                        {m.role}
                     </p>
 
                     {SECTIONS.map((sec) => (
-                        <div key={sec.label} className="mb-5">
+                        <div key={sec.key} className="mb-5">
                             <div
                                 className="flex items-center justify-between mb-2 transition-opacity duration-300"
                                 style={{ opacity: on(sec.start) ? 1 : 0 }}
                             >
-                                <p className="text-[11px] font-bold uppercase tracking-widest">{sec.label}</p>
+                                <p className="text-[11px] font-bold uppercase tracking-widest">{m[sec.key]}</p>
                                 <span
                                     className="rounded-full bg-forest text-cream px-2 py-0.5 text-[10px] font-bold uppercase transition-all duration-300"
                                     style={{
@@ -126,7 +119,7 @@ export function HeroMockup() {
                                         transform: on(sec.parsedAt) ? "none" : "translateY(4px)",
                                     }}
                                 >
-                                    Parsed
+                                    {m.parsed}
                                 </span>
                             </div>
                             <div className="h-px bg-forest/20 mb-3 origin-left transition-transform duration-500" style={grow(sec.start)} />
@@ -163,66 +156,13 @@ export function HeroMockup() {
     );
 }
 
-type Message = { from: "them" | "me"; text: string; file?: string };
-type Thread = { name: string; company: string; initials: string; messages: Message[] };
-
-// Fictional recruiters and companies.
-const THREADS: Thread[] = [
-    {
-        name: "Rina",
-        company: "Nusa Pay",
-        initials: "RN",
-        messages: [
-            { from: "them", text: "Hi Jane! Loved your profile. Could you send over your latest CV?" },
-            { from: "me", text: "Sure — here it is.", file: "jane-doe-cv.pdf" },
-            { from: "them", text: "Clean format, our ATS read every section. Free for a call on Monday?" },
-            { from: "me", text: "Monday works. Talk then!" },
-        ],
-    },
-    {
-        name: "Dimas",
-        company: "Kopi Cloud",
-        initials: "DM",
-        messages: [
-            { from: "them", text: "Your Kafka project caught our eye. What kind of throughput was it?" },
-            { from: "me", text: "Around 2M events a day — the details are in my Projects section." },
-            { from: "them", text: "That's exactly our scale. Sending a technical interview invite now." },
-            { from: "me", text: "Thanks Dimas, looking forward to it!" },
-        ],
-    },
-    {
-        name: "Sarah",
-        company: "Lumbung Data",
-        initials: "SR",
-        messages: [
-            { from: "me", text: "Hi Sarah, just following up on my Backend Engineer application." },
-            { from: "them", text: "Hi Jane! Your CV made it through our ATS screening — you're shortlisted." },
-            { from: "me", text: "That's great news! What's the next step?" },
-            { from: "them", text: "A 45-minute system design chat. I'll share time slots today." },
-        ],
-    },
-    {
-        name: "Kevin",
-        company: "Rantai Logistics",
-        initials: "KV",
-        messages: [
-            { from: "them", text: "Could you send an updated CV with your latest project?" },
-            { from: "me", text: "Updated and exported — took me two minutes.", file: "jane-doe-cv-v2.pdf" },
-            { from: "them", text: "That was fast! Forwarding it to the hiring manager." },
-            { from: "me", text: "Appreciate it, Kevin." },
-        ],
-    },
-    {
-        name: "Ayu",
-        company: "Arunika Tech",
-        initials: "AY",
-        messages: [
-            { from: "them", text: "Great news, Jane — the team would love to make you an offer!" },
-            { from: "me", text: "That's amazing. Thank you so much!" },
-            { from: "them", text: "I'll email the full details this afternoon." },
-            { from: "me", text: "Can't wait to read it. Thanks, Ayu!" },
-        ],
-    },
+// Fictional recruiters and companies; the messages come from the dictionary.
+const RECRUITERS = [
+    { name: "Rina", company: "Nusa Pay", initials: "RN" },
+    { name: "Dimas", company: "Kopi Cloud", initials: "DM" },
+    { name: "Sarah", company: "Lumbung Data", initials: "SR" },
+    { name: "Kevin", company: "Rantai Logistics", initials: "KV" },
+    { name: "Ayu", company: "Arunika Tech", initials: "AY" },
 ];
 
 function Avatar({ mine, initials }: { mine: boolean; initials: string }) {
@@ -254,20 +194,22 @@ function Bubble({ mine, children }: { mine: boolean; children: React.ReactNode }
 }
 
 export function RecruiterChat() {
+    const { t } = useI18n();
     const [ref, inView] = useInView<HTMLDivElement>(0.3);
     const reduced = prefersReducedMotion();
     const [thread, setThread] = useState(0);
-    const [shown, setShown] = useState(reduced ? THREADS[0].messages.length : 0);
+    const messages = t.chat.threads[thread];
+    const [shown, setShown] = useState(reduced ? messages.length : 0);
     const [typing, setTyping] = useState(false);
     const [leaving, setLeaving] = useState(false);
-    const t = THREADS[thread];
-    const next = t.messages[shown];
+    const who = RECRUITERS[thread];
+    const next = messages[shown];
 
     useEffect(() => {
         if (!inView || reduced) return;
         const timers: number[] = [];
         const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms));
-        if (shown < t.messages.length) {
+        if (shown < messages.length) {
             const pause = shown === 0 ? 500 : 700;
             at(pause, () => setTyping(true));
             at(pause + 1100, () => {
@@ -279,14 +221,14 @@ export function RecruiterChat() {
             at(3300, () => {
                 setLeaving(false);
                 setShown(0);
-                setThread((n) => (n + 1) % THREADS.length);
+                setThread((n) => (n + 1) % RECRUITERS.length);
             });
         }
         return () => timers.forEach(clearTimeout);
-    }, [inView, reduced, shown, thread, t.messages.length]);
+    }, [inView, reduced, shown, thread, messages.length]);
 
     return (
-        <div ref={ref} className="relative">
+        <div ref={ref} className="relative" role="region" aria-label={t.chat.label}>
             <PaperPlane className="absolute -top-16 right-4 w-28 text-forest animate-plane" />
             <Birds className="absolute -top-12 left-8 w-14 text-forest animate-drift" />
             <div className="relative rounded-card border border-foreground bg-card shadow-stamp p-5 sm:p-7">
@@ -294,23 +236,24 @@ export function RecruiterChat() {
                     <span
                         key={`avatar-${thread}`}
                         className="animate-pop-in w-10 h-10 rounded-full bg-marigold border border-foreground flex items-center justify-center font-display font-bold shrink-0"
+                        aria-hidden="true"
                     >
-                        {t.initials}
+                        {who.initials}
                     </span>
                     <div className="min-w-0">
                         <p key={`name-${thread}`} className="animate-pop-in font-bold leading-tight truncate">
-                            {t.name} · {t.company}
+                            {who.name} · {who.company}
                         </p>
                         <p className="flex items-center gap-1.5 text-xs font-bold text-success mt-0.5">
-                            <span className="relative flex w-2 h-2">
+                            <span className="relative flex w-2 h-2" aria-hidden="true">
                                 <span className="absolute inset-0 rounded-full bg-fern animate-ping" />
                                 <span className="relative w-2 h-2 rounded-full bg-fern" />
                             </span>
-                            {typing && next?.from === "them" ? "typing…" : "online"}
+                            {typing && next?.from === "them" ? t.chat.typing : t.chat.online}
                         </p>
                     </div>
                     <div className="ml-auto flex gap-1 shrink-0" aria-hidden="true">
-                        {THREADS.map((_, i) => (
+                        {RECRUITERS.map((_, i) => (
                             <span
                                 key={i}
                                 className={cn(
@@ -328,16 +271,16 @@ export function RecruiterChat() {
                         leaving && "opacity-0",
                     )}
                 >
-                    {t.messages.slice(0, shown).map((m, i) => {
-                        const mine = m.from === "me";
+                    {messages.slice(0, shown).map((msg, i) => {
+                        const mine = msg.from === "me";
                         return (
                             <div key={`${thread}-${i}`} className={cn("animate-pop-in flex items-end gap-2", mine && "flex-row-reverse")}>
-                                <Avatar mine={mine} initials={t.initials} />
+                                <Avatar mine={mine} initials={who.initials} />
                                 <Bubble mine={mine}>
-                                    {m.text}
-                                    {m.file && (
+                                    {msg.text}
+                                    {msg.file && (
                                         <span className="mt-2 flex items-center gap-2 rounded-full bg-cream text-forest px-3 py-1.5 text-xs font-bold">
-                                            <FileText className="w-3.5 h-3.5" /> {m.file}
+                                            <FileText className="w-3.5 h-3.5" aria-hidden="true" /> {msg.file}
                                         </span>
                                     )}
                                 </Bubble>
@@ -345,8 +288,8 @@ export function RecruiterChat() {
                         );
                     })}
                     {typing && next && (
-                        <div className={cn("animate-pop-in flex items-end gap-2", next.from === "me" && "flex-row-reverse")}>
-                            <Avatar mine={next.from === "me"} initials={t.initials} />
+                        <div className={cn("animate-pop-in flex items-end gap-2", next.from === "me" && "flex-row-reverse")} aria-hidden="true">
+                            <Avatar mine={next.from === "me"} initials={who.initials} />
                             <Bubble mine={next.from === "me"}>
                                 <span className="flex h-4 items-center px-1">
                                     <Dots className={cn("w-1.5 h-1.5", next.from === "me" ? "bg-cream" : "bg-forest")} />

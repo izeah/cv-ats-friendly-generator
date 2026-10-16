@@ -271,6 +271,21 @@ body {
 .flap { animation: flap 0.9s ease-in-out infinite; }
 .typing-dot { animation: typing 1.2s ease-in-out infinite; }
 
+/* ===== Card vignettes (ngodingpakeai-style mini scenes) ===== */
+@keyframes chev-flow {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 1; }
+}
+@keyframes orbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+.chev { animation: chev-flow 1.2s ease-in-out infinite; }
+.orbit { animation: orbit 5s linear infinite; }
+.blink { animation: blink 1s steps(1) infinite; }
+
 /* ===== Loading skeleton ===== */
 .skeleton {
   position: relative;

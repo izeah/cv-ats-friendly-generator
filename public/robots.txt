@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+# Personal CV pages only exist in each visitor's browser.
+Disallow: /cv/
+
+Sitemap: https://cv-generator.izeah.my.id/sitemap.xml

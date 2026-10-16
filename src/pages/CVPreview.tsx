@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
-  Mail, Phone, MapPin, ArrowLeft, Download, Share2,
-  Briefcase, Code2, FolderKanban, Calendar, CheckCircle2
+  Mail, Phone, MapPin, ArrowLeft, ArrowRight, Download, Share2,
+  Briefcase, Code2, FolderKanban, Calendar, CheckCircle2, LoaderCircle, CircleAlert, FilePlus2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cvShareUrl, decodeCVShare, getCVBySlug, type CVData } from '@/lib/db'
 import { formatDate } from '@/lib/utils'
 import { generateATSPDF } from '@/lib/pdf-generator'
-import { LogoMark, SmallCactus, Tumbleweed, Wordmark } from '@/components/Illustrations'
+import { useI18n, usePageMeta } from '@/lib/i18n'
+import { SmallCactus, Tumbleweed } from '@/components/Illustrations'
+import { BrandLink } from '@/components/SiteChrome'
+import { LanguageSwitcher } from '@/components/Language'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function CVPreview() {
@@ -17,9 +20,12 @@ export default function CVPreview() {
   // /cv/:slug reads this browser's IndexedDB; /cv-share#<data> carries the CV in the link.
   const shared = !slug
   const navigate = useNavigate()
+  const { t, lang } = useI18n()
+  const p = t.preview
   const [localCV, setLocalCV] = useState<CVData | null>(null)
   const [localLoading, setLocalLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
+  const [pdfError, setPdfError] = useState(false)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -44,14 +50,20 @@ export default function CVPreview() {
   const cv = shared ? sharedCV : localCV
   const loading = !shared && localLoading
 
+  const pageMeta = shared ? t.meta.share : t.meta.preview
+  usePageMeta({ title: cv ? `${cv.fullName} — ${pageMeta.title}` : pageMeta.title, description: pageMeta.description })
+
   const exportToPDF = async () => {
     if (!cv) return
     setExporting(true)
+    setPdfError(false)
+    // Let the spinner paint before jsPDF blocks the main thread.
+    await new Promise(r => setTimeout(r, 30))
     try {
-      generateATSPDF(cv)
+      generateATSPDF(cv, t.cv, lang)
     } catch (err) {
       console.error('PDF export failed:', err)
-      alert('Failed to export PDF. Please try again.')
+      setPdfError(true)
     } finally {
       setExporting(false)
     }
@@ -86,18 +98,44 @@ export default function CVPreview() {
     }
   }
 
+  const pdfIcon = exporting
+    ? <LoaderCircle className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+    : <Download className="w-3.5 h-3.5" aria-hidden="true" />
+  const shareIcon = copied
+    ? <CheckCircle2 className="w-3.5 h-3.5 text-success" aria-hidden="true" />
+    : <Share2 className="w-3.5 h-3.5" aria-hidden="true" />
+
+  const header = (
+    <div className="sticky top-0 z-50 glass border-b border-forest/15 no-print">
+      <div className="max-w-[850px] mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        {shared ? (
+          <BrandLink size="sm" />
+        ) : (
+          <Button variant="ghost" size="sm" onClick={handleEdit}>
+            <ArrowLeft className="w-4 h-4" /> {p.backToEdit}
+          </Button>
+        )}
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher compact />
+          {cv && (
+            <div className="hidden sm:flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={shareLink}>
+                {shareIcon} {copied ? p.copied : p.share}
+              </Button>
+              <Button size="sm" onClick={exportToPDF} disabled={exporting}>
+                {pdfIcon} {exporting ? p.pdfBusy : p.pdf}
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background" aria-busy="true" aria-label="Loading your CV">
-        <div className="sticky top-0 z-50 glass border-b border-forest/15">
-          <div className="max-w-[850px] mx-auto px-4 py-3 flex items-center justify-between">
-            <Skeleton className="h-8 w-28" />
-            <div className="flex gap-2">
-              <Skeleton className="h-8 w-20" />
-              <Skeleton className="h-8 w-20" />
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-background" aria-busy="true" aria-label={p.loading}>
+        {header}
         <div className="max-w-[850px] mx-auto px-4 py-8 sm:py-12">
           <div className="rounded-card border border-forest/20 bg-card p-6 sm:p-10 space-y-9">
             <div className="space-y-3">
@@ -124,67 +162,62 @@ export default function CVPreview() {
 
   if (!cv) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-5">
-        <div className="text-center animate-fade-in space-y-4">
-          <div className="relative w-48 h-28 mx-auto">
-            <SmallCactus className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 text-forest origin-bottom animate-sway" />
-            <Tumbleweed className="absolute bottom-0 left-1/2 w-9 text-forest animate-roll" />
+      <div className="min-h-screen flex flex-col bg-background">
+        {header}
+        <div className="flex-1 flex items-center justify-center px-5 py-16">
+          <div className="text-center animate-fade-in space-y-4">
+            <div className="relative w-48 h-28 mx-auto">
+              <SmallCactus className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 text-forest origin-bottom animate-sway" />
+              <Tumbleweed className="absolute bottom-0 left-1/2 w-9 text-forest animate-roll" />
+            </div>
+            <h1 className="font-display text-5xl font-bold uppercase tracking-[-0.03em] leading-none">
+              {shared ? p.brokenTitle : p.notFoundTitle}
+            </h1>
+            <p className="text-muted-foreground max-w-sm">{shared ? p.brokenBody : p.notFoundBody}</p>
+            {shared ? (
+              <Button variant="marigold" onClick={() => navigate('/')}>
+                {p.buildOwn} <ArrowRight className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={handleEdit}>
+                <ArrowLeft className="w-4 h-4" /> {p.backToEdit}
+              </Button>
+            )}
           </div>
-          <h2 className="font-display text-5xl font-bold uppercase tracking-[-0.03em] leading-none">
-            {shared ? 'Link Broken' : 'CV Not Found'}
-          </h2>
-          <p className="text-muted-foreground max-w-sm">
-            {shared
-              ? "This share link is broken or incomplete. Ask the sender to copy it again."
-              : "This CV doesn't exist or hasn't been built yet. The data is stored locally in your browser."}
-          </p>
-          {shared ? (
-            <Button variant="outline" onClick={() => navigate('/')}>
-              Build your own CV
-            </Button>
-          ) : (
-            <Button variant="outline" onClick={handleEdit}>
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back to edit
-            </Button>
-          )}
         </div>
       </div>
     )
   }
 
   const hasContent = !!cv.about || cv.skills.length > 0 || cv.workExperiences.some(e => e.company)
+  const present = t.cv.present
 
   return (
     <div className="min-h-screen bg-background pb-24 sm:pb-0">
-      {/* Controls Bar */}
-      <div className="sticky top-0 z-50 glass border-b border-forest/15 no-print">
-        <div className="max-w-[850px] mx-auto px-4 py-3 flex items-center justify-between">
-          {shared ? (
-            <Link to="/" className="flex items-center gap-2" title="CV ATS Friendly Builder">
-              <LogoMark className="w-8 h-8" />
-              <Wordmark className="text-[11px] hidden sm:flex" />
-            </Link>
-          ) : (
-            <Button variant="ghost" size="sm" onClick={handleEdit}>
-              <ArrowLeft className="w-4 h-4 mr-1" /> Back to edit
-            </Button>
-          )}
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={shareLink}>
-              {copied ? <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-success" /> : <Share2 className="w-3.5 h-3.5 mr-1" />}
-              {copied ? 'Copied!' : 'Share'}
-            </Button>
-            <Button size="sm" onClick={exportToPDF} disabled={exporting}>
-              <Download className="w-3.5 h-3.5 mr-1" />
-              {exporting ? '...' : 'PDF'}
+      {header}
+
+      <div className="max-w-[850px] mx-auto px-4 py-6 sm:py-10 relative z-10">
+        {/* Above-the-fold CTA for people opening someone else's CV */}
+        {shared && (
+          <div className="no-print mb-6 flex flex-col sm:flex-row sm:items-center gap-4 rounded-card bg-forest text-cream px-6 py-5">
+            <div className="flex-1">
+              <p className="font-display text-2xl font-bold uppercase tracking-[-0.02em] leading-none">{p.sharedBannerTitle}</p>
+              <p className="text-sm text-cream/80 mt-1.5">{p.sharedBannerText}</p>
+            </div>
+            <Button variant="marigold" onClick={() => navigate('/create')} className="self-start sm:self-auto">
+              {p.sharedBannerCta} <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* CV Document — clean paper card */}
-      <div className="max-w-[850px] mx-auto px-4 py-8 sm:py-12 relative z-10">
-        <div className="rounded-card border border-foreground overflow-hidden bg-card shadow-stamp">
+        {pdfError && (
+          <p role="alert" className="no-print mb-6 flex items-center gap-2 rounded-2xl border border-destructive bg-destructive/10 px-4 py-3 text-sm font-bold text-destructive">
+            <CircleAlert className="w-4 h-4 shrink-0" aria-hidden="true" /> {p.pdfFailed}
+          </p>
+        )}
+
+        {/* CV Document — clean paper card */}
+        <article className="rounded-card border border-foreground overflow-hidden bg-card shadow-stamp" lang={lang}>
 
           {/* ===== CV Header ===== */}
           <div className="px-6 sm:px-10 pt-8 sm:pt-10 pb-6 border-b border-forest/15">
@@ -197,21 +230,36 @@ export default function CVPreview() {
             <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
               {cv.email && (
                 <span className="flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-primary/60" />{cv.email}
+                  <Mail className="w-3.5 h-3.5 text-primary/60" aria-hidden="true" />{cv.email}
                 </span>
               )}
               {cv.phone && (
                 <span className="flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-primary/60" />{cv.phone}
+                  <Phone className="w-3.5 h-3.5 text-primary/60" aria-hidden="true" />{cv.phone}
                 </span>
               )}
               {cv.city && (
                 <span className="flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-primary/60" />{cv.city}
+                  <MapPin className="w-3.5 h-3.5 text-primary/60" aria-hidden="true" />{cv.city}
                 </span>
               )}
             </div>
           </div>
+
+          {!hasContent && (
+            <div className="no-print px-6 sm:px-10 py-10 border-b border-forest/15 text-center">
+              <span className="w-14 h-14 mx-auto rounded-full bg-marigold border border-foreground flex items-center justify-center" aria-hidden="true">
+                <FilePlus2 className="w-6 h-6" strokeWidth={1.75} />
+              </span>
+              <p className="mt-4 font-display text-2xl font-bold uppercase tracking-[-0.02em]">{p.emptyTitle}</p>
+              <p className="text-sm text-muted-foreground mt-1">{p.emptyBody}</p>
+              {!shared && (
+                <Button variant="outline" size="sm" onClick={handleEdit} className="mt-5">
+                  <ArrowLeft className="w-4 h-4" /> {p.backToEdit}
+                </Button>
+              )}
+            </div>
+          )}
 
           {hasContent && (
           <div className="px-6 sm:px-10 py-6 space-y-7 border-b border-forest/15">
@@ -220,7 +268,7 @@ export default function CVPreview() {
             {cv.about && (
               <section>
                 <h2 className="text-xs font-bold text-foreground uppercase tracking-widest mb-2.5">
-                  Summary
+                  {t.cv.summary}
                 </h2>
                 <div className="w-full h-[1px] bg-forest/20 mb-3" />
                 <p className="text-sm text-foreground/80 leading-relaxed">{cv.about}</p>
@@ -231,9 +279,9 @@ export default function CVPreview() {
             {cv.skills.length > 0 && (
               <section>
                 <div className="flex items-center gap-2 mb-2.5">
-                  <Code2 className="w-4 h-4 text-primary/60" />
+                  <Code2 className="w-4 h-4 text-primary/60" aria-hidden="true" />
                   <h2 className="text-xs font-bold text-foreground uppercase tracking-widest">
-                    Technical Skills
+                    {t.cv.skills}
                   </h2>
                 </div>
                 <div className="w-full h-[1px] bg-forest/20 mb-3" />
@@ -249,22 +297,22 @@ export default function CVPreview() {
             )}
 
             {/* ===== Work Experience ===== */}
-            {cv.workExperiences.length > 0 && cv.workExperiences.some(e => e.company) && (
+            {cv.workExperiences.some(e => e.company) && (
               <section>
                 <div className="flex items-center gap-2 mb-2.5">
-                  <Briefcase className="w-4 h-4 text-primary/60" />
+                  <Briefcase className="w-4 h-4 text-primary/60" aria-hidden="true" />
                   <h2 className="text-xs font-bold text-foreground uppercase tracking-widest">
-                    Work Experience
+                    {t.cv.experience}
                   </h2>
                 </div>
                 <div className="w-full h-[1px] bg-forest/20 mb-4" />
 
                 <div className="space-y-6">
                   {cv.workExperiences.filter(e => e.company).map((exp) => {
-                    const startDate = formatDate(exp.startMonth, exp.startYear)
+                    const startDate = formatDate(exp.startMonth, exp.startYear, lang)
                     const endDate = exp.endMonth && exp.endYear
-                      ? formatDate(exp.endMonth, exp.endYear)
-                      : 'Present'
+                      ? formatDate(exp.endMonth, exp.endYear, lang)
+                      : present
 
                     return (
                       <div key={exp.id}>
@@ -273,7 +321,7 @@ export default function CVPreview() {
                           <h3 className="text-sm font-bold text-foreground">{exp.company}</h3>
                           {startDate && (
                             <span className="flex items-center gap-1 text-xs text-primary/80 font-medium mt-0.5 sm:mt-0 whitespace-nowrap">
-                              <Calendar className="w-3 h-3" />{startDate} — {endDate}
+                              <Calendar className="w-3 h-3" aria-hidden="true" />{startDate} — {endDate}
                             </span>
                           )}
                         </div>
@@ -284,13 +332,13 @@ export default function CVPreview() {
                         )}
 
                         {/* Projects */}
-                        {exp.projects.filter(p => p.description || p.title).length > 0 && (
+                        {exp.projects.some(p => p.description || p.title) && (
                           <div className="mt-2 space-y-3 pl-3.5 border-l border-forest/25">
                             {exp.projects.filter(p => p.description || p.title).map((project) => {
-                              const projStart = formatDate(project.startMonth, project.startYear)
+                              const projStart = formatDate(project.startMonth, project.startYear, lang)
                               const projEnd = project.endMonth && project.endYear
-                                ? formatDate(project.endMonth, project.endYear)
-                                : 'Present'
+                                ? formatDate(project.endMonth, project.endYear, lang)
+                                : present
 
                               return (
                                 <div key={project.id} className="relative">
@@ -301,12 +349,12 @@ export default function CVPreview() {
                                   {project.title && (
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 mb-1">
                                       <h4 className="text-sm font-semibold text-foreground/90 flex items-center gap-1.5">
-                                        <FolderKanban className="w-3 h-3 text-primary/50" />
+                                        <FolderKanban className="w-3 h-3 text-primary/50" aria-hidden="true" />
                                         {project.title}
                                       </h4>
                                       {projStart && (
                                         <span className="flex items-center gap-1 text-[10px] text-primary/80 font-medium whitespace-nowrap">
-                                          <Calendar className="w-2.5 h-2.5" />{projStart} — {projEnd}
+                                          <Calendar className="w-2.5 h-2.5" aria-hidden="true" />{projStart} — {projEnd}
                                         </span>
                                       )}
                                     </div>
@@ -347,24 +395,24 @@ export default function CVPreview() {
           {/* Footer */}
           <div className="px-6 sm:px-10 py-4 text-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Built with CV ATS Friendly Builder
+              {p.builtWith}
             </p>
           </div>
-        </div>
+        </article>
 
         {/* Mobile Bottom Actions */}
         <div className="fixed bottom-0 left-0 right-0 glass border-t border-forest/15 p-3 sm:hidden no-print">
           <div className="flex gap-2 max-w-[850px] mx-auto">
             {!shared && (
               <Button variant="outline" size="default" className="flex-1 px-3" onClick={handleEdit}>
-                <ArrowLeft className="w-4 h-4 mr-1" /> Back to edit
+                <ArrowLeft className="w-4 h-4" /> {p.backToEdit}
               </Button>
             )}
             <Button variant="outline" size="default" className="flex-1 px-3" onClick={shareLink}>
-              <Share2 className="w-4 h-4 mr-1" />{copied ? 'Copied!' : 'Share'}
+              {shareIcon} {copied ? p.copied : p.share}
             </Button>
             <Button size="default" className="flex-1 px-3" onClick={exportToPDF} disabled={exporting}>
-              <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'PDF'}
+              {pdfIcon} {exporting ? p.pdfBusy : p.pdf}
             </Button>
           </div>
         </div>

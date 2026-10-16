@@ -1,85 +1,27 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import {
-  Sparkles, ArrowRight, FileText, Download, Code2, Zap, ShieldCheck, Braces, Share2,
-  ChevronRight, ChevronDown, Check, Archive, Briefcase,
+  Sparkles, ArrowRight, Download, Braces, Share2, ChevronRight, ChevronDown, Check, Archive, Briefcase, FilePlus2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getAllCVs, type CVData } from '@/lib/db'
-import { generateSlug } from '@/lib/utils'
+import { cn, generateSlug } from '@/lib/utils'
+import { rich, useI18n, usePageMeta } from '@/lib/i18n'
 import { PipelineDiagram, StepFlow } from '@/components/FlowDiagrams'
 import { HeroMockup, RecruiterChat } from '@/components/LandingAnimations'
+import {
+  AtsVignette, BackendVignette, BackupVignette, InstantVignette, PdfVignette, PrivacyVignette,
+} from '@/components/Vignettes'
+import { LanguageSwitcher } from '@/components/Language'
+import { BrandLink, SiteFooter } from '@/components/SiteChrome'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  Cactus, SmallCactus, Cloud, Sun, CVSheet, LogoMark, Wordmark, QuestionBubbles, Balloon, Birds, Sparkle,
+  Cactus, SmallCactus, Cloud, Sun, CVSheet, QuestionBubbles, Balloon, Birds, Sparkle,
 } from '@/components/Illustrations'
 
-const features = [
-  {
-    icon: FileText,
-    title: 'ATS-Optimized',
-    description: 'Clean, parseable format that passes through Applicant Tracking Systems with zero friction.',
-  },
-  {
-    icon: Download,
-    title: 'PDF Export',
-    description: 'Real text, not screenshots — a PDF that job portals and ATS parsers can actually read.',
-  },
-  {
-    icon: Code2,
-    title: 'Backend Focused',
-    description: 'Tailored for Backend Developers. Showcase your projects, tech stack, and system design skills.',
-  },
-  {
-    icon: Zap,
-    title: 'Instant Build',
-    description: 'Fill the form, hit Preview & Build. Your professional CV is ready in seconds — no sign-up required.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Privacy First',
-    description: 'All data stored locally in your browser. Zero server uploads. Your data stays with you.',
-  },
-  {
-    icon: Braces,
-    title: 'Backup & Restore',
-    description: 'Export any CV as JSON and import it on another browser or device in one click.',
-  },
-]
-
-const faqs = [
-  {
-    q: 'Is CV ATS Friendly Builder really free?',
-    a: 'Yes. There is no account, no paywall and no watermark. Open the builder and start typing.',
-  },
-  {
-    q: 'Where is my data stored?',
-    a: 'In your own browser (IndexedDB). Nothing is uploaded to a server. Clearing your browser\'s site data removes your CVs, so export a JSON backup of anything you want to keep.',
-  },
-  {
-    q: 'What makes the PDF ATS-friendly?',
-    a: 'It is built from real, selectable text in a single column with standard section headings — no images, tables or text boxes that trip up parsers.',
-  },
-  {
-    q: 'Can I move my CVs to another device?',
-    a: 'Yes. Choose Export JSON from a CV\'s menu, then use Import on the other browser. If a CV with the same email already exists there, you will be asked before it is replaced.',
-  },
-  {
-    q: 'How do I share my CV?',
-    a: 'Press Share on your CV page. It copies a link that carries the CV inside the URL itself (after the #), so whoever opens it sees your CV and can download the PDF — nothing is uploaded to a server. Anyone with the link can read it, so only send it to people you trust.',
-  },
-  {
-    q: 'Can I keep more than one version?',
-    a: 'Yes. Each email is its own CV. Archive the ones you are not using right now and restore them whenever you need them.',
-  },
-]
-
-const stats = [
-  { value: '0', label: 'Accounts needed' },
-  { value: '100%', label: 'Stored in your browser' },
-  { value: '1 click', label: 'To a clean PDF' },
-  { value: 'JSON', label: 'Backup & restore' },
-]
+// Same order as t.features.items.
+const FEATURE_SCENES = [AtsVignette, PdfVignette, BackendVignette, InstantVignette, PrivacyVignette, BackupVignette]
+const SHARING_ICONS = [Share2, Download, Braces, Archive]
 
 function SectionHeading({ eyebrow, title, children }: { eyebrow: string; title: React.ReactNode; children?: React.ReactNode }) {
   return (
@@ -95,69 +37,100 @@ function SectionHeading({ eyebrow, title, children }: { eyebrow: string; title: 
   )
 }
 
+/** Mobile-only bar that slides in once the hero CTA has scrolled away. */
+function StickyCTA() {
+  const { t } = useI18n()
+  const navigate = useNavigate()
+  const [show, setShow] = useState(() => window.scrollY > 640)
+
+  useEffect(() => {
+    const onScroll = () => setShow(window.scrollY > 640)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  return (
+    <div
+      inert={!show}
+      className={cn(
+        'md:hidden fixed inset-x-0 bottom-0 z-[80] glass border-t border-forest/20 px-4 py-3 transition-transform duration-300',
+        show ? 'translate-y-0' : 'translate-y-full',
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <p className="flex-1 text-xs font-bold leading-tight">{t.sticky.text}</p>
+        <Button variant="marigold" onClick={() => navigate('/create')}>
+          {t.sticky.button} <ArrowRight className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 export default function Landing() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const [recentCVs, setRecentCVs] = useState<CVData[] | null>(null)
+  usePageMeta(t.meta.home)
 
   useEffect(() => {
     getAllCVs().then(cvs => setRecentCVs(cvs.slice(0, 5)))
   }, [])
 
   return (
-    <div className="min-h-screen overflow-x-clip">
+    <div className="min-h-screen overflow-x-clip pb-20 md:pb-0">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 glass border-b border-forest/15">
-        <div className="max-w-[1200px] mx-auto px-5 sm:px-10 h-16 flex items-center justify-between gap-6">
-          <a href="#top" className="flex items-center gap-2.5">
-            <LogoMark className="w-10 h-10" />
-            <Wordmark className="text-base" />
-          </a>
-          <div className="hidden md:flex items-center gap-8 text-sm font-bold">
-            <a href="#features" className="hover:underline underline-offset-4">Features</a>
-            <a href="#how" className="hover:underline underline-offset-4">How it works</a>
-            <a href="#faq" className="hover:underline underline-offset-4">FAQ</a>
+        <div className="max-w-[1200px] mx-auto px-5 sm:px-10 h-16 flex items-center justify-between gap-4">
+          <BrandLink />
+          <div className="hidden lg:flex items-center gap-8 text-sm font-bold">
+            <a href="#features" className="hover:underline underline-offset-4">{t.nav.features}</a>
+            <a href="#how" className="hover:underline underline-offset-4">{t.nav.how}</a>
+            <a href="#faq" className="hover:underline underline-offset-4">{t.nav.faq}</a>
           </div>
-          <Button size="sm" onClick={() => navigate('/create')}>
-            Build CV <ArrowRight className="w-3.5 h-3.5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher compact className="sm:hidden" />
+            <LanguageSwitcher className="hidden sm:inline-flex" />
+            <Button size="sm" onClick={() => navigate('/create')} className="hidden sm:inline-flex">
+              {t.common.buildCV} <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section id="top" className="max-w-[1200px] mx-auto px-5 sm:px-10 pt-12 sm:pt-20 pb-20 sm:pb-28">
+      <section id="top" className="max-w-[1200px] mx-auto px-5 sm:px-10 pt-10 sm:pt-20 pb-20 sm:pb-28">
         <div className="grid lg:grid-cols-[1.1fr_1fr] gap-16 lg:gap-12 items-center">
           <div className="animate-fade-in">
-            <p className="inline-flex items-center gap-2 rounded-full bg-forest text-cream px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider mb-7">
-              <Sparkles className="w-3.5 h-3.5 text-marigold" /> Free · No sign-up
+            <p className="inline-flex items-center gap-2 rounded-full bg-forest text-cream px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider mb-6 sm:mb-7">
+              <Sparkles className="w-3.5 h-3.5 text-marigold" aria-hidden="true" /> {t.hero.badge}
             </p>
             <h1 className="isolate font-display font-bold uppercase text-[52px] sm:text-[88px] lg:text-[104px] leading-[0.86] tracking-[-0.03em]">
-              Build a CV<br />that gets you{' '}
+              {t.hero.titleA}<br />{t.hero.titleB}{' '}
               <span className="relative inline-block italic pr-2">
-                <span className="absolute left-0 right-0 bottom-[0.06em] h-[0.32em] bg-marigold -z-10 -rotate-1" />
-                hired.
+                <span className="absolute left-0 right-0 bottom-[0.06em] h-[0.32em] bg-marigold -z-10 -rotate-1" aria-hidden="true" />
+                {t.hero.titleC}
               </span>
             </h1>
-            <p className="mt-7 text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-xl">
-              An ATS-friendly CV builder for{' '}
-              <span className="text-foreground font-bold">Backend Developers</span>. Fill one form,
-              preview it instantly, export a clean PDF — everything stays in your browser.
+            <p className="mt-6 sm:mt-7 text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-xl">
+              {rich(t.hero.lead, { who: <span className="text-foreground font-bold">{t.hero.leadWho}</span> })}
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-x-4 gap-y-3">
+            <div className="mt-8 sm:mt-9 flex flex-wrap items-center gap-x-4 gap-y-3">
               <Button variant="marigold" size="lg" onClick={() => navigate('/create')} className="group">
-                Start building your CV
+                {t.hero.cta}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
               <a href="#how" className="inline-flex items-center gap-1 font-bold px-1 py-2 hover:underline underline-offset-4">
-                See how it works <ChevronRight className="w-4 h-4" />
+                {t.hero.secondary} <ChevronRight className="w-4 h-4" />
               </a>
             </div>
-            <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm font-bold">
-              {['ATS compliant', 'Live preview', 'PDF & JSON export'].map(t => (
-                <li key={t} className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-marigold border border-foreground flex items-center justify-center">
+            <ul className="mt-9 sm:mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm font-bold">
+              {t.hero.checks.map(text => (
+                <li key={text} className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-marigold border border-foreground flex items-center justify-center" aria-hidden="true">
                     <Check className="w-3 h-3" strokeWidth={3} />
                   </span>
-                  {t}
+                  {text}
                 </li>
               ))}
             </ul>
@@ -170,24 +143,27 @@ export default function Landing() {
       <section id="features" className="relative scroll-mt-20 max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
         <Balloon className="absolute top-16 right-6 sm:right-16 w-14 sm:w-20 text-forest animate-bob" />
         <Cloud className="absolute top-40 right-32 w-24 text-forest animate-drift [animation-delay:-4s] hidden md:block" />
-        <SectionHeading eyebrow="Features" title={<>Everything you need<br />to stand out</>}>
-          Purpose-built for Backend Developers who want to leave a lasting impression on recruiters and hiring managers.
+        <SectionHeading eyebrow={t.features.eyebrow} title={<>{t.features.titleA}<br />{t.features.titleB}</>}>
+          {t.features.lead}
         </SectionHeading>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map(feature => (
-            <div
-              key={feature.title}
-              className="group rounded-card border border-foreground bg-card shadow-stamp p-8 transition-transform duration-200 hover:-translate-x-0.5 hover:-translate-y-0.5"
-            >
-              <span className="w-12 h-12 rounded-full bg-marigold border border-foreground flex items-center justify-center mb-6 group-hover:rotate-[-8deg] transition-transform">
-                <feature.icon className="w-5 h-5" strokeWidth={1.75} />
-              </span>
-              <h3 className="font-display text-3xl font-bold uppercase tracking-[-0.03em] leading-none mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-            </div>
-          ))}
+          {t.features.items.map((feature, i) => {
+            const Scene = FEATURE_SCENES[i]
+            return (
+              <div
+                key={i}
+                className="rounded-card border border-foreground bg-card shadow-stamp p-4 sm:p-5 transition-transform duration-200 hover:-translate-x-0.5 hover:-translate-y-0.5"
+              >
+                <Scene offset={(i % 3) * 2} />
+                <div className="px-3 pt-6 pb-3">
+                  <h3 className="font-display text-3xl font-bold uppercase tracking-[-0.03em] leading-none mb-3">
+                    {feature.title}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </section>
 
@@ -198,8 +174,8 @@ export default function Landing() {
           <CVSheet className="absolute top-36 right-40 w-12 text-forest animate-bob [animation-delay:-2s] hidden lg:block" />
           <Sparkle className="twinkle absolute top-[46%] left-[8%] w-6 text-forest hidden md:block" />
           <Sparkle className="twinkle absolute bottom-[38%] right-[9%] w-5 text-forest [animation-delay:-1.2s] hidden md:block" />
-          <SectionHeading eyebrow="How it works" title={<>From form to<br />finished CV</>}>
-            Everything you type flows through one formatter and comes out ready for a recruiter — as a PDF, a share link, or a JSON backup.
+          <SectionHeading eyebrow={t.how.eyebrow} title={<>{t.how.titleA}<br />{t.how.titleB}</>}>
+            {t.how.lead}
           </SectionHeading>
           <PipelineDiagram />
           <div className="mt-20 sm:mt-28">
@@ -212,24 +188,22 @@ export default function Landing() {
       <section className="max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div>
-            <SectionHeading eyebrow="Sharing" title={<>Ready the moment<br />a recruiter asks</>} />
+            <SectionHeading eyebrow={t.sharing.eyebrow} title={<>{t.sharing.titleA}<br />{t.sharing.titleB}</>} />
             <ul className="space-y-7 -mt-4">
-              {[
-                { icon: Share2, title: 'Share as a link', text: 'One link carries your CV — the recipient can view it and download the PDF.' },
-                { icon: Download, title: 'Download a clean PDF', text: 'One click, text-based, parsed correctly by ATS software.' },
-                { icon: Braces, title: 'Back up as JSON', text: 'Keep a copy or move it to another device.' },
-                { icon: Archive, title: 'Keep every version', text: 'Archive CVs you are not using and bring them back anytime.' },
-              ].map(item => (
-                <li key={item.title} className="flex gap-5">
-                  <span className="w-12 h-12 rounded-full bg-marigold border border-foreground flex items-center justify-center shrink-0">
-                    <item.icon className="w-5 h-5" strokeWidth={1.75} />
-                  </span>
-                  <div>
-                    <p className="font-display text-2xl font-bold uppercase tracking-[-0.03em] leading-tight">{item.title}</p>
-                    <p className="text-muted-foreground">{item.text}</p>
-                  </div>
-                </li>
-              ))}
+              {t.sharing.items.map((item, i) => {
+                const Icon = SHARING_ICONS[i]
+                return (
+                  <li key={item.title} className="flex gap-5">
+                    <span className="w-12 h-12 rounded-full bg-marigold border border-foreground flex items-center justify-center shrink-0" aria-hidden="true">
+                      <Icon className="w-5 h-5" strokeWidth={1.75} />
+                    </span>
+                    <div>
+                      <p className="font-display text-2xl font-bold uppercase tracking-[-0.03em] leading-tight">{item.title}</p>
+                      <p className="text-muted-foreground">{item.text}</p>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           </div>
           <RecruiterChat />
@@ -242,7 +216,7 @@ export default function Landing() {
         <Sparkle className="twinkle absolute bottom-6 left-[45%] w-5 text-forest [animation-delay:-0.8s]" />
         <Birds className="absolute top-8 left-[30%] w-14 text-forest animate-drift hidden sm:block" />
         <div className="relative max-w-[1200px] mx-auto px-5 sm:px-10 py-16 sm:py-20 grid grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6">
-          {stats.map(s => (
+          {t.stats.map(s => (
             <div key={s.label}>
               <p className="font-display text-5xl sm:text-6xl font-bold uppercase leading-none tracking-[-0.03em]">{s.value}</p>
               <p className="mt-2 font-bold">{s.label}</p>
@@ -251,11 +225,13 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Saved CVs */}
-      {recentCVs === null && (
-        <section className="max-w-[1200px] mx-auto px-5 sm:px-10 pt-20 sm:pt-28" aria-busy="true">
-          <Skeleton className="h-9 w-64 mb-8" />
-          <div className="grid sm:grid-cols-2 gap-4">
+      {/* Saved CVs: skeleton → list or empty state */}
+      <section className="max-w-[1200px] mx-auto px-5 sm:px-10 pt-20 sm:pt-28" aria-busy={recentCVs === null}>
+        <h2 className="font-display text-4xl font-bold uppercase tracking-[-0.03em] mb-8 flex items-center gap-3">
+          <Briefcase className="w-7 h-7" strokeWidth={1.75} aria-hidden="true" /> {t.saved.title}
+        </h2>
+        {recentCVs === null && (
+          <div className="grid sm:grid-cols-2 gap-4" aria-label={t.saved.loading}>
             {[0, 1].map(i => (
               <div key={i} className="flex items-center gap-3 rounded-full border border-forest/20 pl-2 pr-5 py-2">
                 <Skeleton className="w-11 h-11 shrink-0" />
@@ -266,13 +242,22 @@ export default function Landing() {
               </div>
             ))}
           </div>
-        </section>
-      )}
-      {recentCVs && recentCVs.length > 0 && (
-        <section className="max-w-[1200px] mx-auto px-5 sm:px-10 pt-20 sm:pt-28">
-          <h2 className="font-display text-4xl font-bold uppercase tracking-[-0.03em] mb-8 flex items-center gap-3">
-            <Briefcase className="w-7 h-7" strokeWidth={1.75} /> Your saved CVs
-          </h2>
+        )}
+        {recentCVs?.length === 0 && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 rounded-card border border-dashed border-forest/40 bg-card/60 px-7 py-7">
+            <span className="w-14 h-14 rounded-full bg-marigold border border-foreground flex items-center justify-center shrink-0" aria-hidden="true">
+              <FilePlus2 className="w-6 h-6" strokeWidth={1.75} />
+            </span>
+            <div className="flex-1">
+              <p className="font-display text-2xl font-bold uppercase tracking-[-0.02em] leading-tight">{t.saved.emptyTitle}</p>
+              <p className="text-muted-foreground">{t.saved.emptyText}</p>
+            </div>
+            <Button onClick={() => navigate('/create')}>
+              {t.saved.emptyCta} <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+        {recentCVs && recentCVs.length > 0 && (
           <div className="grid sm:grid-cols-2 gap-4">
             {recentCVs.map(cv => (
               <button
@@ -281,7 +266,7 @@ export default function Landing() {
                 onClick={() => navigate(`/cv/${generateSlug(cv.email)}`)}
               >
                 <span className="flex items-center gap-3 min-w-0">
-                  <span className="w-11 h-11 rounded-full bg-marigold border border-foreground flex items-center justify-center font-display text-lg font-bold shrink-0">
+                  <span className="w-11 h-11 rounded-full bg-marigold border border-foreground flex items-center justify-center font-display text-lg font-bold shrink-0" aria-hidden="true">
                     {cv.fullName.charAt(0).toUpperCase()}
                   </span>
                   <span className="min-w-0">
@@ -289,30 +274,30 @@ export default function Landing() {
                     <span className="block text-xs text-muted-foreground truncate">{cv.email}</span>
                   </span>
                 </span>
-                <ChevronRight className="w-5 h-5 shrink-0 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-5 h-5 shrink-0 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
               </button>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* FAQ — Monad accordion rows */}
       <section id="faq" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
         <div className="grid lg:grid-cols-[1fr_1.6fr] gap-10 lg:gap-16">
           <div className="lg:sticky lg:top-28 self-start">
-            <SectionHeading eyebrow="FAQ" title={<>Questions,<br />answered</>}>
-              Still unsure? Everything about how your data and files are handled.
+            <SectionHeading eyebrow={t.faq.eyebrow} title={<>{t.faq.titleA}<br />{t.faq.titleB}</>}>
+              {t.faq.lead}
             </SectionHeading>
             <QuestionBubbles className="w-36 sm:w-44 text-forest -mt-4 animate-bob" />
           </div>
           <div className="border-t border-forest/25">
-            {faqs.map(f => (
+            {t.faq.items.map(f => (
               <details key={f.q} className="faq-item group border-b border-forest/25">
                 <summary className="flex items-center justify-between gap-6 py-7 sm:py-9 cursor-pointer list-none">
                   <span className="font-display text-2xl sm:text-[28px] font-bold uppercase tracking-[-0.02em] leading-tight">
                     {f.q}
                   </span>
-                  <span className="w-10 h-10 rounded-full border border-foreground flex items-center justify-center shrink-0 transition-all duration-300 group-open:rotate-180 group-open:bg-marigold">
+                  <span className="w-10 h-10 rounded-full border border-foreground flex items-center justify-center shrink-0 transition-all duration-300 group-open:rotate-180 group-open:bg-marigold" aria-hidden="true">
                     <ChevronDown className="w-5 h-5" />
                   </span>
                 </summary>
@@ -333,31 +318,19 @@ export default function Landing() {
           <CVSheet className="absolute top-10 left-[55%] w-16 text-cream/40 hidden lg:block animate-bob" />
           <div className="relative max-w-xl">
             <h2 className="font-display text-5xl sm:text-7xl font-bold uppercase leading-[0.88] tracking-[-0.03em]">
-              Ready to land<br />your next role?
+              {t.cta.titleA}<br />{t.cta.titleB}
             </h2>
-            <p className="mt-5 text-lg text-cream/80 max-w-md">
-              Build a CV that passes ATS filters, impresses hiring managers, and gets you to the interview stage.
-            </p>
+            <p className="mt-5 text-lg text-cream/80 max-w-md">{t.cta.text}</p>
             <Button variant="marigold" size="lg" onClick={() => navigate('/create')} className="mt-8 group">
-              Build your CV now
+              {t.cta.button}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-forest/15">
-        <div className="max-w-[1200px] mx-auto px-5 sm:px-10 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <LogoMark className="w-9 h-9" />
-            <Wordmark className="text-sm" />
-          </div>
-          <p className="text-sm text-muted-foreground text-center">
-            Built for Backend Developers. All data stored locally in your browser.
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
+      <StickyCTA />
     </div>
   )
 }
