@@ -1,0 +1,14 @@
+{
+  "name": "CV ATS Friendly Builder",
+  "short_name": "CV ATS",
+  "description": "Build ATS-friendly CVs for Backend Developers. Everything stays in your browser.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f2ee98",
+  "theme_color": "#10380b",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

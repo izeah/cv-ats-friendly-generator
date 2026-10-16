@@ -139,6 +139,27 @@ export function downloadCVJson(cv: CVData): void {
   setTimeout(() => URL.revokeObjectURL(url))
 }
 
+// Share links carry the same JSON as the export (minus indentation) as URL-safe
+// base64 in the hash: /cv-share#<data>. The hash never reaches the server.
+export function cvShareUrl(cv: CVData): string {
+  let bin = ''
+  new TextEncoder().encode(JSON.stringify(cv)).forEach(b => (bin += String.fromCharCode(b)))
+  const data = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  return `${location.origin}/cv-share#${data}`
+}
+
+export function decodeCVShare(data: string): CVData {
+  let text: string
+  try {
+    const b64 = data.trim().replace(/-/g, '+').replace(/_/g, '/')
+    const bin = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4))
+    text = new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(bin, c => c.charCodeAt(0)))
+  } catch {
+    throw new Error('This share link is broken or incomplete.')
+  }
+  return parseCVJson(text)
+}
+
 const str = (v: unknown): string => (typeof v === 'string' ? v : '')
 const strList = (v: unknown): string[] =>
   Array.isArray(v) ? v.filter((s): s is string => typeof s === 'string') : []
@@ -156,7 +177,7 @@ export function parseCVJson(text: string): CVData {
   const email = str(raw?.email).trim().toLowerCase()
   const fullName = str(raw?.fullName).trim()
   if (!email || !fullName || !Array.isArray(raw.workExperiences) || !Array.isArray(raw.skills)) {
-    throw new Error('Not a CV Forge file: email, fullName, workExperiences or skills is missing.')
+    throw new Error('Not a CV ATS Friendly Builder file: email, fullName, workExperiences or skills is missing.')
   }
   const now = new Date()
   return {

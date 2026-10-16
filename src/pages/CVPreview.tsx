@@ -1,19 +1,24 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
-  Mail, Phone, MapPin, ArrowLeft, Download, Share2, ExternalLink,
-  Sparkles, Briefcase, Code2, FolderKanban, Calendar, CheckCircle2
+  Mail, Phone, MapPin, ArrowLeft, Download, Share2,
+  Briefcase, Code2, FolderKanban, Calendar, CheckCircle2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { getCVBySlug, type CVData } from '@/lib/db'
+import { cvShareUrl, decodeCVShare, getCVBySlug, type CVData } from '@/lib/db'
 import { formatDate } from '@/lib/utils'
 import { generateATSPDF } from '@/lib/pdf-generator'
+import { LogoMark, SmallCactus, Tumbleweed, Wordmark } from '@/components/Illustrations'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function CVPreview() {
   const { slug } = useParams<{ slug: string }>()
+  const { hash } = useLocation()
+  // /cv/:slug reads this browser's IndexedDB; /cv-share#<data> carries the CV in the link.
+  const shared = !slug
   const navigate = useNavigate()
-  const [cv, setCv] = useState<CVData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [localCV, setLocalCV] = useState<CVData | null>(null)
+  const [localLoading, setLocalLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -21,11 +26,23 @@ export default function CVPreview() {
     async function load() {
       if (!slug) return
       const data = await getCVBySlug(slug)
-      setCv(data ?? null)
-      setLoading(false)
+      setLocalCV(data ?? null)
+      setLocalLoading(false)
     }
     load()
   }, [slug])
+
+  const sharedCV = useMemo(() => {
+    if (!shared) return null
+    try {
+      return decodeCVShare(hash.slice(1))
+    } catch {
+      return null
+    }
+  }, [shared, hash])
+
+  const cv = shared ? sharedCV : localCV
+  const loading = !shared && localLoading
 
   const exportToPDF = async () => {
     if (!cv) return
@@ -40,12 +57,25 @@ export default function CVPreview() {
     }
   }
 
-  const shareLink = () => {
-    const url = window.location.href
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
+  const shareLink = async () => {
+    if (!cv) return
+    const url = shared ? window.location.href : cvShareUrl(cv)
+    try {
+      await navigator.clipboard.writeText(url)
+    } catch {
+      // Clipboard API can be blocked (permissions, older browsers): fall back to a hidden textarea.
+      const ta = document.createElement('textarea')
+      ta.value = url
+      ta.setAttribute('readonly', '')
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      ta.remove()
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleEdit = () => {
@@ -58,12 +88,35 @@ export default function CVPreview() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center animate-fade-in">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center mx-auto mb-4 animate-glow">
-            <Sparkles className="w-6 h-6 text-white animate-pulse" />
+      <div className="min-h-screen bg-background" aria-busy="true" aria-label="Loading your CV">
+        <div className="sticky top-0 z-50 glass border-b border-forest/15">
+          <div className="max-w-[850px] mx-auto px-4 py-3 flex items-center justify-between">
+            <Skeleton className="h-8 w-28" />
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-20" />
+            </div>
           </div>
-          <p className="text-muted-foreground">Loading your CV...</p>
+        </div>
+        <div className="max-w-[850px] mx-auto px-4 py-8 sm:py-12">
+          <div className="rounded-card border border-forest/20 bg-card p-6 sm:p-10 space-y-9">
+            <div className="space-y-3">
+              <Skeleton className="h-11 w-2/3 rounded-2xl" />
+              <Skeleton className="h-4 w-1/3" />
+              <div className="flex gap-4 pt-1">
+                <Skeleton className="h-3 w-40" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+            {[3, 2, 4].map((lines, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="h-3 w-32" />
+                {Array.from({ length: lines }, (_, j) => (
+                  <Skeleton key={j} className="h-2.5" style={{ width: `${92 - j * 13}%` }} />
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -71,38 +124,57 @@ export default function CVPreview() {
 
   if (!cv) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background px-5">
         <div className="text-center animate-fade-in space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto">
-            <ExternalLink className="w-8 h-8 text-destructive" />
+          <div className="relative w-48 h-28 mx-auto">
+            <SmallCactus className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 text-forest origin-bottom animate-sway" />
+            <Tumbleweed className="absolute bottom-0 left-1/2 w-9 text-forest animate-roll" />
           </div>
-          <h2 className="text-xl font-semibold">CV Not Found</h2>
+          <h2 className="font-display text-5xl font-bold uppercase tracking-[-0.03em] leading-none">
+            {shared ? 'Link Broken' : 'CV Not Found'}
+          </h2>
           <p className="text-muted-foreground max-w-sm">
-            This CV doesn't exist or hasn't been generated yet.
-            The data is stored locally in your browser.
+            {shared
+              ? "This share link is broken or incomplete. Ask the sender to copy it again."
+              : "This CV doesn't exist or hasn't been built yet. The data is stored locally in your browser."}
           </p>
-          <Button variant="outline" onClick={handleEdit}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to edit
-          </Button>
+          {shared ? (
+            <Button variant="outline" onClick={() => navigate('/')}>
+              Build your own CV
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={handleEdit}>
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to edit
+            </Button>
+          )}
         </div>
       </div>
     )
   }
 
+  const hasContent = !!cv.about || cv.skills.length > 0 || cv.workExperiences.some(e => e.company)
+
   return (
-    <div className="min-h-screen bg-background noise-bg">
+    <div className="min-h-screen bg-background pb-24 sm:pb-0">
       {/* Controls Bar */}
-      <div className="sticky top-0 z-50 glass border-b border-border/40 no-print">
+      <div className="sticky top-0 z-50 glass border-b border-forest/15 no-print">
         <div className="max-w-[850px] mx-auto px-4 py-3 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={handleEdit}>
-            <ArrowLeft className="w-4 h-4 mr-1" /> Back to edit
-          </Button>
+          {shared ? (
+            <Link to="/" className="flex items-center gap-2" title="CV ATS Friendly Builder">
+              <LogoMark className="w-8 h-8" />
+              <Wordmark className="text-[11px] hidden sm:flex" />
+            </Link>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={handleEdit}>
+              <ArrowLeft className="w-4 h-4 mr-1" /> Back to edit
+            </Button>
+          )}
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={shareLink}>
               {copied ? <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-success" /> : <Share2 className="w-3.5 h-3.5 mr-1" />}
               {copied ? 'Copied!' : 'Share'}
             </Button>
-            <Button variant="gradient" size="sm" onClick={exportToPDF} disabled={exporting}>
+            <Button size="sm" onClick={exportToPDF} disabled={exporting}>
               <Download className="w-3.5 h-3.5 mr-1" />
               {exporting ? '...' : 'PDF'}
             </Button>
@@ -110,17 +182,17 @@ export default function CVPreview() {
         </div>
       </div>
 
-      {/* CV Document — Dark themed, blended */}
-      <div className="max-w-[850px] mx-auto px-4 py-8 relative z-10">
-        <div className="rounded-xl border border-border/30 overflow-hidden bg-card/40 backdrop-blur-sm shadow-2xl shadow-primary/5">
+      {/* CV Document — clean paper card */}
+      <div className="max-w-[850px] mx-auto px-4 py-8 sm:py-12 relative z-10">
+        <div className="rounded-card border border-foreground overflow-hidden bg-card shadow-stamp">
 
           {/* ===== CV Header ===== */}
-          <div className="px-6 sm:px-10 pt-8 sm:pt-10 pb-6 border-b border-border/20">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-1">
+          <div className="px-6 sm:px-10 pt-8 sm:pt-10 pb-6 border-b border-forest/15">
+            <h1 className="font-display text-4xl sm:text-5xl font-bold uppercase tracking-[-0.03em] leading-none text-foreground mb-2">
               {cv.fullName}
             </h1>
             {cv.occupation && (
-              <p className="text-primary font-medium text-sm mb-4">{cv.occupation}</p>
+              <p className="text-foreground font-bold mb-4">{cv.occupation}</p>
             )}
             <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
               {cv.email && (
@@ -141,15 +213,16 @@ export default function CVPreview() {
             </div>
           </div>
 
-          <div className="px-6 sm:px-10 py-6 space-y-7">
+          {hasContent && (
+          <div className="px-6 sm:px-10 py-6 space-y-7 border-b border-forest/15">
 
             {/* ===== About ===== */}
             {cv.about && (
               <section>
-                <h2 className="text-xs font-bold text-foreground/70 uppercase tracking-widest mb-2.5">
+                <h2 className="text-xs font-bold text-foreground uppercase tracking-widest mb-2.5">
                   Summary
                 </h2>
-                <div className="w-full h-[1px] bg-gradient-to-r from-primary/50 via-primary/20 to-transparent mb-3" />
+                <div className="w-full h-[1px] bg-forest/20 mb-3" />
                 <p className="text-sm text-foreground/80 leading-relaxed">{cv.about}</p>
               </section>
             )}
@@ -159,15 +232,15 @@ export default function CVPreview() {
               <section>
                 <div className="flex items-center gap-2 mb-2.5">
                   <Code2 className="w-4 h-4 text-primary/60" />
-                  <h2 className="text-xs font-bold text-foreground/70 uppercase tracking-widest">
+                  <h2 className="text-xs font-bold text-foreground uppercase tracking-widest">
                     Technical Skills
                   </h2>
                 </div>
-                <div className="w-full h-[1px] bg-gradient-to-r from-primary/50 via-primary/20 to-transparent mb-3" />
+                <div className="w-full h-[1px] bg-forest/20 mb-3" />
                 <div className="flex flex-wrap gap-1.5">
                   {cv.skills.map(skill => (
                     <span key={skill}
-                      className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary/8 text-primary border border-primary/15">
+                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-secondary text-foreground border border-forest/20">
                       {skill}
                     </span>
                   ))}
@@ -180,11 +253,11 @@ export default function CVPreview() {
               <section>
                 <div className="flex items-center gap-2 mb-2.5">
                   <Briefcase className="w-4 h-4 text-primary/60" />
-                  <h2 className="text-xs font-bold text-foreground/70 uppercase tracking-widest">
+                  <h2 className="text-xs font-bold text-foreground uppercase tracking-widest">
                     Work Experience
                   </h2>
                 </div>
-                <div className="w-full h-[1px] bg-gradient-to-r from-primary/50 via-primary/20 to-transparent mb-4" />
+                <div className="w-full h-[1px] bg-forest/20 mb-4" />
 
                 <div className="space-y-6">
                   {cv.workExperiences.filter(e => e.company).map((exp) => {
@@ -212,7 +285,7 @@ export default function CVPreview() {
 
                         {/* Projects */}
                         {exp.projects.filter(p => p.description || p.title).length > 0 && (
-                          <div className="mt-2 space-y-3 pl-3.5 border-l border-primary/15">
+                          <div className="mt-2 space-y-3 pl-3.5 border-l border-forest/25">
                             {exp.projects.filter(p => p.description || p.title).map((project) => {
                               const projStart = formatDate(project.startMonth, project.startYear)
                               const projEnd = project.endMonth && project.endYear
@@ -222,7 +295,7 @@ export default function CVPreview() {
                               return (
                                 <div key={project.id} className="relative">
                                   {/* Dot */}
-                                  <div className="absolute -left-[17px] top-1.5 w-2 h-2 rounded-full bg-primary/50 border-2 border-background" />
+                                  <div className="absolute -left-[19px] top-1.5 w-2.5 h-2.5 rounded-full bg-marigold border border-forest" />
 
                                   {/* Project title */}
                                   {project.title && (
@@ -251,7 +324,7 @@ export default function CVPreview() {
                                     <div className="flex flex-wrap gap-1 mt-1.5">
                                       {project.technologies.map(tech => (
                                         <span key={tech}
-                                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted/50 text-muted-foreground border border-border/30">
+                                          className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-background text-foreground/80 border border-forest/20">
                                           {tech}
                                         </span>
                                       ))}
@@ -269,25 +342,28 @@ export default function CVPreview() {
               </section>
             )}
           </div>
+          )}
 
           {/* Footer */}
-          <div className="px-6 sm:px-10 py-3 border-t border-border/20 text-center">
-            <p className="text-[10px] text-muted-foreground/50">
-              Generated by CV Forge — ATS-Friendly CV Generator
+          <div className="px-6 sm:px-10 py-4 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Built with CV ATS Friendly Builder
             </p>
           </div>
         </div>
 
         {/* Mobile Bottom Actions */}
-        <div className="fixed bottom-0 left-0 right-0 glass border-t border-border/40 p-3 sm:hidden no-print">
+        <div className="fixed bottom-0 left-0 right-0 glass border-t border-forest/15 p-3 sm:hidden no-print">
           <div className="flex gap-2 max-w-[850px] mx-auto">
-            <Button variant="outline" size="default" className="flex-1 px-3" onClick={handleEdit}>
-              <ArrowLeft className="w-4 h-4 mr-1" /> Back to edit
-            </Button>
+            {!shared && (
+              <Button variant="outline" size="default" className="flex-1 px-3" onClick={handleEdit}>
+                <ArrowLeft className="w-4 h-4 mr-1" /> Back to edit
+              </Button>
+            )}
             <Button variant="outline" size="default" className="flex-1 px-3" onClick={shareLink}>
               <Share2 className="w-4 h-4 mr-1" />{copied ? 'Copied!' : 'Share'}
             </Button>
-            <Button variant="gradient" size="default" className="flex-1 px-3" onClick={exportToPDF} disabled={exporting}>
+            <Button size="default" className="flex-1 px-3" onClick={exportToPDF} disabled={exporting}>
               <Download className="w-4 h-4 mr-1" />{exporting ? '...' : 'PDF'}
             </Button>
           </div>
