@@ -7,7 +7,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { cvShareUrl, decodeCVShare, getCVBySlug, type CVData } from '@/lib/db'
 import { formatDate } from '@/lib/utils'
-import { generateATSPDF } from '@/lib/pdf-generator'
 import { useI18n, usePageMeta } from '@/lib/i18n'
 import { SmallCactus, Tumbleweed } from '@/components/Illustrations'
 import { BrandLink } from '@/components/SiteChrome'
@@ -60,6 +59,8 @@ export default function CVPreview() {
     // Let the spinner paint before jsPDF blocks the main thread.
     await new Promise(r => setTimeout(r, 30))
     try {
+      // jsPDF is large and only needed here, so it loads on first click instead of with every page.
+      const { generateATSPDF } = await import('@/lib/pdf-generator')
       generateATSPDF(cv, t.cv, lang)
     } catch (err) {
       console.error('PDF export failed:', err)
