@@ -117,7 +117,7 @@ export const en = {
     titleA: 'Ready when',
     titleB: 'a recruiter asks',
     items: [
-      { title: 'Share as a link', text: 'One link carries your CV — the recipient can view it and download the PDF.' },
+      { title: 'Share as a link', text: 'One link carries your CV — a recruiter can view it and download the PDF.' },
       { title: 'Download a clean PDF', text: 'One click, text-based, parsed correctly by ATS software.' },
       { title: 'Back up as JSON', text: 'Keep a copy or move it to another device.' },
       { title: 'Keep every version', text: 'Archive CVs you are not using and bring them back anytime.' },
@@ -539,7 +539,7 @@ export const id: Dict = {
     titleA: 'Siap saat',
     titleB: 'recruiter meminta',
     items: [
-      { title: 'Bagikan lewat link', text: 'Satu link membawa CV kamu — penerima bisa melihat dan mengunduh PDF-nya.' },
+      { title: 'Bagikan lewat link', text: 'Satu link membawa CV kamu — recruiter bisa melihat dan mengunduh PDF-nya.' },
       { title: 'Unduh PDF yang rapi', text: 'Sekali klik, berbasis teks, terbaca benar oleh software ATS.' },
       { title: 'Cadangkan sebagai JSON', text: 'Simpan salinan atau pindahkan ke perangkat lain.' },
       { title: 'Simpan setiap versi', text: 'Arsipkan CV yang belum dipakai dan pulihkan kapan saja.' },
