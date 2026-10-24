@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SiteFooter, SiteHeader } from '@/components/SiteChrome'
-import { SmallCactus, Tumbleweed } from '@/components/Illustrations'
+import { Mascot } from '@/components/Mascot'
 import { useI18n, usePageMeta } from '@/lib/i18n'
 
 export default function NotFound() {
@@ -13,20 +13,24 @@ export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader />
-      <main className="flex-1 flex items-center justify-center px-5 py-20">
-        <div className="text-center space-y-5 animate-fade-in">
-          <div className="relative w-48 h-28 mx-auto">
-            <SmallCactus className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 text-forest origin-bottom animate-sway" />
-            <Tumbleweed className="absolute bottom-0 left-1/2 w-9 text-forest animate-roll" />
+      <main className="flex-1 grid place-items-center px-5 py-16 sm:py-24">
+        <div className="grid md:grid-cols-[auto_1fr] items-center gap-8 md:gap-14 max-w-3xl animate-fade-in">
+          <div className="relative mx-auto w-44 sm:w-56">
+            <p className="absolute -top-10 left-1/2 -translate-x-1/2 h-display text-[110px] sm:text-[140px] text-forest/10 select-none" aria-hidden="true">
+              404
+            </p>
+            <Mascot who="dimas" pose="magnify" className="relative w-full" />
           </div>
-          <p className="font-display text-7xl font-bold text-forest/20 leading-none">404</p>
-          <h1 className="font-display text-5xl font-bold uppercase tracking-[-0.03em] leading-none">{t.notFound.title}</h1>
-          <p className="text-muted-foreground max-w-sm mx-auto">{t.notFound.body}</p>
-          <div className="flex flex-wrap justify-center gap-3 pt-2">
-            <Button variant="marigold" onClick={() => navigate('/create')}>
-              {t.common.buildCV} <ArrowRight className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/')}>{t.notFound.home}</Button>
+          <div className="text-center md:text-left">
+            <p className="kicker mb-3">{t.notFound.kicker}</p>
+            <h1 className="h-display text-5xl sm:text-6xl">{t.notFound.title}</h1>
+            <p className="mt-5 text-lg text-muted-foreground max-w-md mx-auto md:mx-0">{t.notFound.body}</p>
+            <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-7">
+              <Button variant="marigold" size="lg" onClick={() => navigate('/create')}>
+                {t.common.buildCV} <ArrowRight className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="lg" onClick={() => navigate('/')}>{t.notFound.home}</Button>
+            </div>
           </div>
         </div>
       </main>

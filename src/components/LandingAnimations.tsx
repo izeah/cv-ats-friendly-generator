@@ -6,7 +6,7 @@ import { cn, prefersReducedMotion } from "@/lib/utils";
 import { useInView } from "@/lib/useInView";
 import { useLoop } from "@/lib/useLoop";
 import { useI18n } from "@/lib/i18n";
-import { Birds, Cactus, Cloud, PaperPlane, SmallCactus, Sun } from "@/components/Illustrations";
+import { Mascot, MascotAvatar, type Who } from "@/components/Mascot";
 
 // Timeline, one step = 450ms: type name → fill sections → pop skills →
 // ATS scan sweeps → "Parsed" tags + "ATS-ready" stamp → hold → restart.
@@ -44,16 +44,23 @@ export function HeroMockup() {
     const grow = (n: number) => ({ transform: `scaleX(${on(n) ? 1 : 0})` });
 
     return (
-        <div className="relative mx-auto w-full max-w-[420px] lg:max-w-none" role="img" aria-label={m.label}>
-            <div className="absolute -top-12 right-0 w-24 animate-float">
-                <Sun className="w-full text-forest animate-spin-slow" />
+        <div className="relative mx-auto w-full max-w-[440px] lg:max-w-[480px] lg:mr-6" role="img" aria-label={m.label}>
+            {/* The recruiter scanning, and her verdict once the scan lands */}
+            <div
+                className="absolute z-20 -top-12 sm:-top-14 right-0 sm:-right-8 w-[min(15rem,62vw)] rounded-2xl rounded-br-sm border-2 border-forest bg-cream px-3.5 py-2.5 text-[13px] font-semibold leading-snug text-forest shadow-stamp-sm transition-all duration-500"
+                style={{
+                    opacity: on(DONE) ? 1 : 0,
+                    transform: on(DONE) ? "none" : "translateY(10px) scale(0.92)",
+                    transitionTimingFunction: springy,
+                }}
+                aria-hidden="true"
+            >
+                {t.hero.rinaSays}
             </div>
-            <Cloud className="absolute top-4 -left-12 w-28 text-forest animate-drift hidden sm:block" />
-            <Birds className="absolute -top-10 left-1/3 w-16 text-forest animate-drift [animation-duration:14s]" />
-            <Cactus className="absolute -bottom-6 -right-6 sm:-right-14 w-28 sm:w-36 text-forest origin-bottom animate-sway" />
-            <SmallCactus className="absolute -bottom-3 -left-8 w-14 text-forest origin-bottom animate-sway [animation-delay:-2s] hidden sm:block" />
+            <Mascot who="rina" pose="magnify" className="absolute z-10 -right-6 sm:-right-16 -bottom-10 w-32 sm:w-44" />
+            <Mascot who="arya" pose="wave" className="absolute z-10 -left-8 sm:-left-16 -bottom-10 w-28 sm:w-36" />
 
-            <div className="relative rounded-card border border-foreground bg-card shadow-stamp rotate-[-1.5deg]" aria-hidden="true">
+            <div className="on-light relative rounded-card border-2 border-forest bg-card shadow-[8px_8px_0_0_rgb(0_0_0/0.35)] rotate-[-2deg]" aria-hidden="true">
                 <div className="relative overflow-hidden rounded-card p-6 sm:p-8">
                     {step >= SCAN && step < DONE && (
                         <div
@@ -64,7 +71,7 @@ export function HeroMockup() {
                         </div>
                     )}
 
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between gap-2 mb-6">
                         <span className="inline-flex items-center gap-2 rounded-full bg-forest text-cream pl-1.5 pr-3.5 py-1.5 text-xs font-bold">
                             <span className="w-5 h-5 rounded-full bg-marigold text-forest flex items-center justify-center">
                                 <Paperclip className="w-3 h-3" />
@@ -78,7 +85,7 @@ export function HeroMockup() {
                             )}
                         </span>
                         <span
-                            className="rounded-full bg-marigold border border-foreground px-3 py-1 text-[11px] font-bold uppercase transition-all duration-500"
+                            className="rounded-full bg-marigold border-2 border-forest px-3 py-1 text-[11px] font-bold uppercase transition-all duration-500"
                             style={{
                                 opacity: on(DONE) ? 1 : 0,
                                 transform: on(DONE) ? "scale(1) rotate(-6deg)" : "scale(1.8) rotate(-24deg)",
@@ -90,7 +97,7 @@ export function HeroMockup() {
                     </div>
 
                     <p
-                        className="font-display text-4xl font-bold uppercase leading-none tracking-[-0.03em]"
+                        className="h-display text-4xl"
                         style={{
                             clipPath: on(1) ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
                             transition: "clip-path 0.9s steps(8, end)",
@@ -111,7 +118,7 @@ export function HeroMockup() {
                                 className="flex items-center justify-between mb-2 transition-opacity duration-300"
                                 style={{ opacity: on(sec.start) ? 1 : 0 }}
                             >
-                                <p className="text-[11px] font-bold uppercase tracking-widest">{m[sec.key]}</p>
+                                <p className="font-mono text-[11px] font-bold uppercase tracking-widest">{m[sec.key]}</p>
                                 <span
                                     className="rounded-full bg-forest text-cream px-2 py-0.5 text-[10px] font-bold uppercase transition-all duration-300"
                                     style={{
@@ -135,7 +142,7 @@ export function HeroMockup() {
                         </div>
                     ))}
 
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1.5 pb-6 sm:pb-2">
                         {SKILLS.map((s, i) => (
                             <span
                                 key={s}
@@ -157,20 +164,23 @@ export function HeroMockup() {
 }
 
 // Fictional recruiters and companies; the messages come from the dictionary.
-const RECRUITERS = [
-    { name: "Rina", company: "Nusa Pay", initials: "RN" },
-    { name: "Dimas", company: "Kopi Cloud", initials: "DM" },
+// Rina and Dimas are drawn as mascots; the rest get initials.
+const RECRUITERS: { name: string; company: string; initials: string; who?: Who }[] = [
+    { name: "Rina", company: "Nusa Pay", initials: "RN", who: "rina" },
+    { name: "Dimas", company: "Kopi Cloud", initials: "DM", who: "dimas" },
     { name: "Sarah", company: "Lumbung Data", initials: "SR" },
     { name: "Kevin", company: "Rantai Logistics", initials: "KV" },
     { name: "Ayu", company: "Arunika Tech", initials: "AY" },
 ];
 
-function Avatar({ mine, initials }: { mine: boolean; initials: string }) {
+function Avatar({ mine, initials, who, className = "w-8 h-8" }: { mine: boolean; initials: string; who?: Who; className?: string }) {
+    if (!mine && who) return <MascotAvatar who={who} className={className} />;
     return (
         <span
             className={cn(
-                "w-8 h-8 rounded-full border border-foreground flex items-center justify-center text-[11px] font-bold shrink-0",
+                "rounded-full border-2 border-forest flex items-center justify-center text-[11px] font-bold shrink-0",
                 mine ? "bg-forest text-cream" : "bg-marigold",
+                className,
             )}
         >
             {mine ? "JD" : initials}
@@ -182,10 +192,10 @@ function Bubble({ mine, children }: { mine: boolean; children: React.ReactNode }
     return (
         <div
             className={cn(
-                "max-w-[80%] px-4 py-3 text-sm font-semibold leading-snug border",
+                "max-w-[80%] px-4 py-3 text-sm font-semibold leading-snug border-2",
                 mine
                     ? "bg-forest text-cream border-forest rounded-[24px] rounded-br-md"
-                    : "bg-white text-forest border-forest/30 rounded-[24px] rounded-bl-md",
+                    : "bg-white text-forest border-forest/20 rounded-[24px] rounded-bl-md",
             )}
         >
             {children}
@@ -229,16 +239,11 @@ export function RecruiterChat() {
 
     return (
         <div ref={ref} className="relative" role="region" aria-label={t.chat.label}>
-            <PaperPlane className="absolute -top-16 right-4 w-28 text-forest animate-plane" />
-            <Birds className="absolute -top-12 left-8 w-14 text-forest animate-drift" />
-            <div className="relative rounded-card border border-foreground bg-card shadow-stamp p-5 sm:p-7">
+            <Mascot who="dimas" pose="phone" className="absolute z-10 -top-24 right-2 sm:-right-6 w-28 sm:w-36" />
+            <div className="on-light relative rounded-card border-2 border-forest bg-card shadow-[8px_8px_0_0_rgb(0_0_0/0.35)] p-5 sm:p-7">
                 <div className="flex items-center gap-3 pb-4 mb-5 border-b border-forest/15">
-                    <span
-                        key={`avatar-${thread}`}
-                        className="animate-pop-in w-10 h-10 rounded-full bg-marigold border border-foreground flex items-center justify-center font-display font-bold shrink-0"
-                        aria-hidden="true"
-                    >
-                        {who.initials}
+                    <span key={`avatar-${thread}`} className="animate-pop-in shrink-0" aria-hidden="true">
+                        <Avatar mine={false} initials={who.initials} who={who.who} className="w-10 h-10 text-sm" />
                     </span>
                     <div className="min-w-0">
                         <p key={`name-${thread}`} className="animate-pop-in font-bold leading-tight truncate">
@@ -252,7 +257,7 @@ export function RecruiterChat() {
                             {typing && next?.from === "them" ? t.chat.typing : t.chat.online}
                         </p>
                     </div>
-                    <div className="ml-auto flex gap-1 shrink-0" aria-hidden="true">
+                    <div className="ml-auto mr-20 sm:mr-24 flex gap-1 shrink-0" aria-hidden="true">
                         {RECRUITERS.map((_, i) => (
                             <span
                                 key={i}
@@ -275,7 +280,7 @@ export function RecruiterChat() {
                         const mine = msg.from === "me";
                         return (
                             <div key={`${thread}-${i}`} className={cn("animate-pop-in flex items-end gap-2", mine && "flex-row-reverse")}>
-                                <Avatar mine={mine} initials={who.initials} />
+                                <Avatar mine={mine} initials={who.initials} who={who.who} />
                                 <Bubble mine={mine}>
                                     {msg.text}
                                     {msg.file && (
@@ -289,7 +294,7 @@ export function RecruiterChat() {
                     })}
                     {typing && next && (
                         <div className={cn("animate-pop-in flex items-end gap-2", next.from === "me" && "flex-row-reverse")} aria-hidden="true">
-                            <Avatar mine={next.from === "me"} initials={who.initials} />
+                            <Avatar mine={next.from === "me"} initials={who.initials} who={who.who} />
                             <Bubble mine={next.from === "me"}>
                                 <span className="flex h-4 items-center px-1">
                                     <Dots className={cn("w-1.5 h-1.5", next.from === "me" ? "bg-cream" : "bg-forest")} />

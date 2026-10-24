@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -21,4 +22,9 @@ export function generateSlug(email: string): string {
 
 export function prefersReducedMotion(): boolean {
   return typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+/** Reveal delay for a [data-reveal] element, in seconds (see useReveal). */
+export function stagger(seconds: number): CSSProperties {
+  return { '--d': `${seconds}s` } as CSSProperties
 }

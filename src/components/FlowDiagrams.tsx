@@ -1,4 +1,4 @@
-// Animated pipeline diagram and step flowchart, modelled on DESIGN-Monad.md:
+// Animated pipeline diagram, modelled on DESIGN-Monad.md:
 // pill nodes, thin curved connectors, a glowing hub, data "packets" in motion.
 import type { CSSProperties } from "react";
 import {
@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { cn, prefersReducedMotion } from "@/lib/utils";
 import { LogoMark } from "@/components/Illustrations";
-import { ExportVignette, FormVignette, PreviewVignette } from "@/components/Vignettes";
 import { useI18n } from "@/lib/i18n";
 import { useInView } from "@/lib/useInView";
 
@@ -36,12 +35,12 @@ function NodePill({
     return (
         <div
             className={cn(
-                "reveal inline-flex items-center gap-2 rounded-full border border-foreground bg-card py-1.5 pl-1.5 pr-4 text-xs font-bold uppercase tracking-wide whitespace-nowrap",
+                "reveal inline-flex items-center gap-2 rounded-full border-2 border-forest bg-card py-1.5 pl-1.5 pr-4 text-[13px] font-bold whitespace-nowrap shadow-stamp-sm",
                 className,
             )}
             style={style}
         >
-            <span className="w-6 h-6 rounded-full bg-marigold border border-foreground flex items-center justify-center shrink-0">
+            <span className="w-6 h-6 rounded-full bg-marigold border-2 border-forest flex items-center justify-center shrink-0">
                 <Icon className="w-3.5 h-3.5" strokeWidth={2} />
             </span>
             {label}
@@ -55,7 +54,7 @@ function Hub({ className, label }: { className?: string; label: string }) {
             <div className="absolute -inset-[30%] rounded-full bg-marigold blur-2xl animate-hub-glow" />
             <div className="reveal relative w-full h-full rounded-full bg-forest text-cream border-2 border-forest flex flex-col items-center justify-center text-center shadow-stamp-cream">
                 <LogoMark className="w-[42%] h-[42%] mb-1.5" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-cream/80">
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-cream/80">
                     {label}
                 </span>
             </div>
@@ -190,67 +189,5 @@ export function PipelineDiagram() {
                 </div>
             </div>
         </div>
-    );
-}
-
-const STEP_SCENES = [FormVignette, PreviewVignette, ExportVignette];
-
-function Arrow({ vertical, order }: { vertical?: boolean; order: number }) {
-    const d = vertical ? "M20 4V44M12 36L20 44L28 36" : "M4 20H76M68 12L76 20L68 28";
-    return (
-        <svg
-            viewBox={vertical ? "0 0 40 48" : "0 0 80 40"}
-            className={cn(
-                "shrink-0 text-forest self-center",
-                vertical ? "w-8 h-10 md:hidden" : "hidden md:block w-14 lg:w-20",
-            )}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-        >
-            <path d={d} pathLength={1} className="draw-line" style={delay(300 + order * 350)} />
-        </svg>
-    );
-}
-
-export function StepFlow() {
-    const { t } = useI18n();
-    const [ref, inView] = useInView<HTMLOListElement>();
-    return (
-        <ol ref={ref} className={cn("flex flex-col md:flex-row items-stretch", inView && "in-view")}>
-            {t.how.steps.map((step, i) => {
-                const Scene = STEP_SCENES[i];
-                return (
-                <li key={i} className="contents">
-                    {i > 0 && (
-                        <>
-                            <Arrow order={i} />
-                            <Arrow vertical order={i} />
-                        </>
-                    )}
-                    <div
-                        className="reveal flex-1 rounded-card border border-foreground bg-card shadow-stamp p-4 sm:p-5"
-                        style={delay(i * 350)}
-                    >
-                        <div className="relative">
-                            <Scene offset={i * 2} />
-                            <span className="absolute top-3 left-3 rounded-full bg-forest text-cream px-2.5 py-1 font-display text-sm font-bold leading-none">
-                                0{i + 1}
-                            </span>
-                        </div>
-                        <div className="px-3 pt-6 pb-3">
-                            <h3 className="font-display text-3xl font-bold uppercase tracking-[-0.03em] leading-none mb-3">
-                                {step.title}
-                            </h3>
-                            <p className="text-muted-foreground leading-relaxed">{step.description}</p>
-                        </div>
-                    </div>
-                </li>
-                );
-            })}
-        </ol>
     );
 }

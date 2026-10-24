@@ -1,38 +1,31 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
-  Gift, UserRoundX, ArrowRight, Download, Braces, Share2, ChevronRight, ChevronDown, Check, Archive, Briefcase, FilePlus2,
+  ArrowRight, Download, Braces, Share2, ChevronRight, Plus, Archive, Briefcase, FilePlus2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { CVData } from '@/lib/db'
-import { cn, generateSlug } from '@/lib/utils'
+import { cn, generateSlug, stagger } from '@/lib/utils'
 import { rich, useI18n, usePageMeta } from '@/lib/i18n'
-import { PipelineDiagram, StepFlow } from '@/components/FlowDiagrams'
+import { useReveal } from '@/lib/useReveal'
+import { PipelineDiagram } from '@/components/FlowDiagrams'
 import { HeroMockup, RecruiterChat } from '@/components/LandingAnimations'
 import {
-  AtsVignette, BackendVignette, BackupVignette, InstantVignette, PdfVignette, PrivacyVignette,
+  AtsVignette, BackendVignette, BackupVignette, ExportVignette, FormVignette, InstantVignette, PdfVignette,
+  PreviewVignette, PrivacyVignette,
 } from '@/components/Vignettes'
 import { SiteFooter, SiteHeader } from '@/components/SiteChrome'
+import { ScrollStory } from '@/components/ScrollStory'
+import { Hl, SectionHead } from '@/components/Section'
+import { Mascot, type Pose, type Who } from '@/components/Mascot'
 import Testimonials from '@/components/Testimonials'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Cactus, SmallCactus, Cloud, Sun, CVSheet, QuestionBubbles, Balloon, Birds, Sparkle,
-} from '@/components/Illustrations'
 
-// Same order as t.features.items.
+// Same order as t.features.items and t.how.steps.
 const FEATURE_SCENES = [AtsVignette, PdfVignette, BackendVignette, InstantVignette, PrivacyVignette, BackupVignette]
+const STEP_SCENES = [FormVignette, PreviewVignette, ExportVignette]
+const STEP_CAST: [Who, Pose][] = [['arya', 'type'], ['sekar', 'think'], ['dimas', 'phone']]
 const SHARING_ICONS = [Share2, Download, Braces, Archive]
-
-function SectionHeading({ title, children }: { title: React.ReactNode; children?: React.ReactNode }) {
-  return (
-    <div className="max-w-2xl mb-12 sm:mb-16">
-      <h2 className="font-display font-bold uppercase text-5xl sm:text-6xl leading-[0.9] tracking-[-0.03em]">
-        {title}
-      </h2>
-      {children && <p className="mt-5 text-lg text-muted-foreground leading-relaxed">{children}</p>}
-    </div>
-  )
-}
 
 /** Mobile-only bar that slides in once the hero CTA has scrolled away. */
 function StickyCTA() {
@@ -64,12 +57,85 @@ function StickyCTA() {
   )
 }
 
+/** Dark hero: the grid drifts, and a brighter copy of it follows the pointer. */
+function Hero() {
+  const { t } = useI18n()
+  const navigate = useNavigate()
+  const ref = useRef<HTMLElement>(null)
+
+  const onMove = (e: React.PointerEvent) => {
+    const el = ref.current
+    if (!el || e.pointerType !== 'mouse') return
+    const r = el.getBoundingClientRect()
+    el.style.setProperty('--mx', `${e.clientX - r.left}px`)
+    el.style.setProperty('--my', `${e.clientY - r.top}px`)
+    el.setAttribute('data-lit', '')
+  }
+
+  return (
+    <section
+      id="top"
+      ref={ref}
+      data-header="dark"
+      onPointerMove={onMove}
+      onPointerLeave={() => ref.current?.removeAttribute('data-lit')}
+      className="on-dark relative -mt-16 overflow-clip bg-forest text-cream"
+    >
+      <div className="hero-grid" aria-hidden="true"><span /></div>
+      <div className="hero-grid is-glow" aria-hidden="true"><span /></div>
+      <div className="relative max-w-[1240px] mx-auto px-5 sm:px-10 pt-28 sm:pt-36 pb-20 sm:pb-24 grid lg:grid-cols-[1.08fr_1fr] gap-16 lg:gap-10 items-center">
+        <div>
+          <p className="flex flex-wrap items-center gap-x-2 text-xs font-bold text-marigold mb-6 animate-fade-in">
+            <span>{t.hero.eyebrow}</span>
+            <span aria-hidden="true">·</span>
+            <span>{t.hero.eyebrowTail}</span>
+            <span className="w-9 h-0.5 bg-marigold ml-1" aria-hidden="true" />
+          </p>
+          <h1 className="h-display text-[clamp(44px,6.6vw,92px)] leading-[0.98] animate-slide-up">
+            {t.hero.titleA}
+            <br />
+            {t.hero.titleB} <Hl>{t.hero.titleHl}</Hl>
+          </h1>
+          <p className="mt-7 text-lg sm:text-xl text-cream/75 leading-relaxed max-w-xl">
+            {rich(t.hero.lead, { who: <span className="text-cream font-bold">{t.hero.leadWho}</span> })}
+          </p>
+          <div className="mt-9 flex flex-wrap items-center gap-x-7 gap-y-4">
+            <Button
+              variant="marigold"
+              size="lg"
+              onClick={() => navigate('/create')}
+              className="group shadow-[4px_4px_0_0_var(--color-forest-deep)] hover:shadow-[6px_6px_0_0_var(--color-forest-deep)] active:shadow-[1px_1px_0_0_var(--color-forest-deep)]"
+            >
+              {t.hero.cta}
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Button>
+            <a href="#how" className="link-mark inline-flex items-center gap-2 font-bold py-2">
+              {t.hero.secondary} <ChevronRight className="w-4 h-4" />
+            </a>
+          </div>
+          <p className="mt-3 font-script text-2xl text-marigold/90 -rotate-2 origin-left">{t.hero.scribble}</p>
+          <ul className="mt-8 flex flex-wrap gap-x-2 gap-y-1 text-sm text-cream/60">
+            {t.hero.proof.map((item, i) => (
+              <li key={item} className="flex items-center gap-2">
+                {i > 0 && <span aria-hidden="true">·</span>}
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <HeroMockup />
+      </div>
+    </section>
+  )
+}
+
 export default function Landing() {
   const navigate = useNavigate()
   const { hash } = useLocation()
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const [recentCVs, setRecentCVs] = useState<CVData[] | null>(null)
   usePageMeta(t.meta.home)
+  useReveal(lang)
 
   // Arriving from another page via "/#faq": scroll once the section exists.
   useEffect(() => {
@@ -81,247 +147,258 @@ export default function Landing() {
     import('@/lib/db').then(({ getAllCVs }) => getAllCVs()).then(cvs => setRecentCVs(cvs.slice(0, 5)))
   }, [])
 
+  const startCTA = (label: string) => (
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+      <Button variant="marigold" size="lg" onClick={() => navigate('/create')} className="group">
+        {label}
+        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+      </Button>
+      <span className="font-script text-2xl font-bold text-script -rotate-2">{t.how.scribble}</span>
+    </div>
+  )
+
   return (
     <div className="min-h-screen overflow-x-clip pb-20 md:pb-0">
       <SiteHeader />
+      <main>
+        <Hero />
 
-      {/* Hero */}
-      <section id="top" className="max-w-[1200px] mx-auto px-5 sm:px-10 pt-10 sm:pt-20 pb-20 sm:pb-28">
-        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-16 lg:gap-12 items-center">
-          <div className="animate-fade-in">
-            <p className="inline-flex items-center gap-2 rounded-full bg-forest text-cream px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider mb-6 sm:mb-7">
-              <Gift className="w-3.5 h-3.5 text-marigold" aria-hidden="true" /> {t.hero.badgeFree}
-              <span className="text-cream/40" aria-hidden="true">·</span>
-              <UserRoundX className="w-3.5 h-3.5 text-marigold" aria-hidden="true" /> {t.hero.badgeNoSignup}
-            </p>
-            <h1 className="isolate font-display font-bold uppercase text-[52px] sm:text-[88px] lg:text-[104px] leading-[0.86] tracking-[-0.03em]">
-              {t.hero.titleA}<br />{t.hero.titleB}{' '}
-              <span className="relative inline-block italic pr-2">
-                <span className="absolute left-0 right-0 bottom-[0.06em] h-[0.32em] bg-marigold -z-10 -rotate-1" aria-hidden="true" />
-                {t.hero.titleC}
-              </span>
-            </h1>
-            <p className="mt-6 sm:mt-7 text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-xl">
-              {rich(t.hero.lead, { who: <span className="text-foreground font-bold">{t.hero.leadWho}</span> })}
-            </p>
-            <div className="mt-8 sm:mt-9 flex flex-wrap items-center gap-x-4 gap-y-3">
-              <Button variant="marigold" size="lg" onClick={() => navigate('/create')} className="group">
-                {t.hero.cta}
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <a href="#how" className="inline-flex items-center gap-1 font-bold px-1 py-2 hover:underline underline-offset-4">
-                {t.hero.secondary} <ChevronRight className="w-4 h-4" />
-              </a>
-            </div>
-            <ul className="mt-9 sm:mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm font-bold">
-              {t.hero.checks.map(text => (
-                <li key={text} className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-marigold border border-foreground flex items-center justify-center" aria-hidden="true">
-                    <Check className="w-3 h-3" strokeWidth={3} />
-                  </span>
-                  {text}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <HeroMockup />
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="relative scroll-mt-20 max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
-        <Balloon className="absolute top-16 right-6 sm:right-16 w-14 sm:w-20 text-forest animate-bob" />
-        <Cloud className="absolute top-40 right-32 w-24 text-forest animate-drift [animation-delay:-4s] hidden md:block" />
-        <SectionHeading title={<>{t.features.titleA}<br />{t.features.titleB}</>}>
-          {t.features.lead}
-        </SectionHeading>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {t.features.items.map((feature, i) => {
-            const Scene = FEATURE_SCENES[i]
-            return (
-              <div
-                key={i}
-                className="rounded-card border border-foreground bg-card shadow-stamp p-4 sm:p-5 transition-transform duration-200 hover:-translate-x-0.5 hover:-translate-y-0.5"
-              >
-                <Scene offset={(i % 3) * 2} />
-                <div className="px-3 pt-6 pb-3">
-                  <h3 className="font-display text-3xl font-bold uppercase tracking-[-0.03em] leading-none mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </section>
-
-      {/* How it works — pipeline diagram + step flowchart */}
-      <section id="how" className="scroll-mt-20 border-y border-forest/15 bg-parchment/60">
-        <div className="relative max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
-          <Cloud className="absolute top-14 right-6 sm:right-20 w-28 text-forest animate-drift" />
-          <CVSheet className="absolute top-36 right-40 w-12 text-forest animate-bob [animation-delay:-2s] hidden lg:block" />
-          <Sparkle className="twinkle absolute top-[46%] left-[8%] w-6 text-forest hidden md:block" />
-          <Sparkle className="twinkle absolute bottom-[38%] right-[9%] w-5 text-forest [animation-delay:-1.2s] hidden md:block" />
-          <SectionHeading title={<>{t.how.titleA}<br />{t.how.titleB}</>}>
-            {t.how.lead}
-          </SectionHeading>
-          <PipelineDiagram />
-          <div className="mt-20 sm:mt-28">
-            <StepFlow />
-          </div>
-        </div>
-      </section>
-
-      {/* Chat bubbles */}
-      <section id="share" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <SectionHeading title={<>{t.sharing.titleA}<br />{t.sharing.titleB}</>} />
-            <ul className="space-y-7 -mt-4">
-              {t.sharing.items.map((item, i) => {
-                const Icon = SHARING_ICONS[i]
+        {/* Features */}
+        <section id="features" data-header="light" className="section scroll-mt-16">
+          <div className="max-w-[1240px] mx-auto px-5 sm:px-10">
+            <SectionHead
+              kicker={t.features.kicker}
+              title={<>{t.features.titleA} <Hl>{t.features.titleHl}</Hl></>}
+              lead={t.features.lead}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+              {t.features.items.map((feature, i) => {
+                const Scene = FEATURE_SCENES[i]
                 return (
-                  <li key={item.title} className="flex gap-5">
-                    <span className="w-12 h-12 rounded-full bg-marigold border border-foreground flex items-center justify-center shrink-0" aria-hidden="true">
-                      <Icon className="w-5 h-5" strokeWidth={1.75} />
-                    </span>
-                    <div>
-                      <p className="font-display text-2xl font-bold uppercase tracking-[-0.03em] leading-tight">{item.title}</p>
-                      <p className="text-muted-foreground">{item.text}</p>
+                  <div
+                    key={i}
+                    data-reveal
+                    style={stagger((i % 3) * 0.08)}
+                    className="rounded-card border-2 border-forest bg-card shadow-stamp p-3.5 sm:p-4 transition-[transform,box-shadow] duration-200 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-stamp-lg"
+                  >
+                    <Scene offset={(i % 3) * 2} />
+                    <div className="px-2.5 pt-5 pb-2.5">
+                      <h3 className="h-display text-[26px] mb-2.5">{feature.title}</h3>
+                      <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
                     </div>
-                  </li>
+                  </div>
                 )
               })}
-            </ul>
-          </div>
-          <RecruiterChat />
-        </div>
-      </section>
-
-      {/* Stat band */}
-      <section className="relative overflow-hidden bg-marigold border-y border-forest">
-        <Sparkle className="twinkle absolute top-6 right-8 w-7 text-forest" />
-        <Sparkle className="twinkle absolute bottom-6 left-[45%] w-5 text-forest [animation-delay:-0.8s]" />
-        <Birds className="absolute top-8 left-[30%] w-14 text-forest animate-drift hidden sm:block" />
-        <div className="relative max-w-[1200px] mx-auto px-5 sm:px-10 py-16 sm:py-20 grid grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6">
-          {t.stats.map(s => (
-            <div key={s.label}>
-              <p className="font-display text-5xl sm:text-6xl font-bold uppercase leading-none tracking-[-0.03em]">{s.value}</p>
-              <p className="mt-2 font-bold">{s.label}</p>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {/* Testimonials */}
-      <section id="stories" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
-        <Testimonials />
-      </section>
+        {/* How it works: sticky story, then the pipeline behind it */}
+        <section id="how" data-header="light" className="section scroll-mt-16 border-t border-forest/10 bg-paper-mid [--story-bg:var(--color-paper-mid)]">
+          <div className="max-w-[1240px] mx-auto px-5 sm:px-10">
+            <SectionHead
+              kicker={t.how.kicker}
+              title={<>{t.how.titleA} <Hl>{t.how.titleHl}</Hl></>}
+              lead={t.how.lead}
+              className="mb-0 sm:mb-4"
+            />
+            <ScrollStory
+              steps={t.how.steps}
+              meter={[t.how.meterStart, t.how.meterEnd]}
+              renderPanel={i => {
+                const Scene = STEP_SCENES[i]
+                return <Scene offset={i * 2} />
+              }}
+              renderMascot={i => <Mascot who={STEP_CAST[i][0]} pose={STEP_CAST[i][1]} />}
+              action={startCTA(t.how.cta)}
+            />
 
-      {/* Saved CVs: skeleton → list or empty state */}
-      <section className="max-w-[1200px] mx-auto px-5 sm:px-10" aria-busy={recentCVs === null}>
-        <h2 className="font-display text-4xl font-bold uppercase tracking-[-0.03em] mb-8 flex items-center gap-3">
-          <Briefcase className="w-7 h-7" strokeWidth={1.75} aria-hidden="true" /> {t.saved.title}
-        </h2>
-        {recentCVs === null && (
-          <div className="grid sm:grid-cols-2 gap-4" aria-label={t.saved.loading}>
-            {[0, 1].map(i => (
-              <div key={i} className="flex items-center gap-3 rounded-full border border-forest/20 pl-2 pr-5 py-2">
-                <Skeleton className="w-11 h-11 shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-3 w-1/2" />
-                  <Skeleton className="h-2.5 w-2/3" />
-                </div>
+            <div className="mt-24 sm:mt-32 text-center">
+              <p className="kicker mb-3" data-reveal>{t.how.pipelineKicker}</p>
+              <h3 className="h-display text-[clamp(28px,3.4vw,44px)] mb-12 sm:mb-16" data-reveal style={stagger(0.08)}>
+                {t.how.pipelineTitle}
+              </h3>
+              <PipelineDiagram />
+            </div>
+          </div>
+        </section>
+
+        {/* Send to recruiters: dark band */}
+        <section id="share" data-header="dark" className="section on-dark scroll-mt-16 relative overflow-clip bg-forest">
+          <div className="dot-grid absolute inset-0 opacity-60" aria-hidden="true" />
+          <div className="relative max-w-[1240px] mx-auto px-5 sm:px-10 grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+            <div>
+              <SectionHead
+                stacked
+                kicker={t.sharing.kicker}
+                title={<>{t.sharing.titleA} <Hl>{t.sharing.titleHl}</Hl></>}
+                className="mb-10"
+              />
+              <ul className="space-y-6">
+                {t.sharing.items.map((item, i) => {
+                  const Icon = SHARING_ICONS[i]
+                  return (
+                    <li key={item.title} className="flex gap-5" data-reveal style={stagger(i * 0.08)}>
+                      <span className="w-12 h-12 rounded-full bg-marigold text-forest border-2 border-forest-deep flex items-center justify-center shrink-0" aria-hidden="true">
+                        <Icon className="w-5 h-5" strokeWidth={2} />
+                      </span>
+                      <div>
+                        <p className="h-display text-[22px]">{item.title}</p>
+                        <p className="mt-1 text-muted-foreground">{item.text}</p>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+            <RecruiterChat />
+          </div>
+        </section>
+
+        {/* Stat band */}
+        <section data-header="accent" className="bg-marigold border-y-2 border-forest">
+          <div className="max-w-[1240px] mx-auto px-5 sm:px-10 py-14 sm:py-16 grid grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6">
+            {t.stats.map((s, i) => (
+              <div key={s.label} data-reveal style={stagger(i * 0.08)}>
+                <p className="h-display text-5xl sm:text-6xl">{s.value}</p>
+                <p className="mt-2 font-bold">{s.label}</p>
               </div>
             ))}
           </div>
-        )}
-        {recentCVs?.length === 0 && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 rounded-card border border-dashed border-forest/40 bg-card/60 px-7 py-7">
-            <span className="w-14 h-14 rounded-full bg-marigold border border-foreground flex items-center justify-center shrink-0" aria-hidden="true">
-              <FilePlus2 className="w-6 h-6" strokeWidth={1.75} />
-            </span>
-            <div className="flex-1">
-              <p className="font-display text-2xl font-bold uppercase tracking-[-0.02em] leading-tight">{t.saved.emptyTitle}</p>
-              <p className="text-muted-foreground">{t.saved.emptyText}</p>
+        </section>
+
+        {/* Testimonials + saved CVs */}
+        <section id="stories" data-header="light" className="section scroll-mt-16">
+          <div className="max-w-[1240px] mx-auto px-5 sm:px-10">
+            <Testimonials />
+
+            <div className="mt-24 sm:mt-28" aria-busy={recentCVs === null}>
+              <h2 className="h-display text-3xl sm:text-4xl mb-7 flex items-center gap-3">
+                <Briefcase className="w-7 h-7" strokeWidth={2} aria-hidden="true" /> {t.saved.title}
+              </h2>
+              {recentCVs === null && (
+                <div className="grid sm:grid-cols-2 gap-4" aria-label={t.saved.loading}>
+                  {[0, 1].map(i => (
+                    <div key={i} className="flex items-center gap-3 rounded-2xl border-2 border-forest/15 pl-2 pr-5 py-2">
+                      <Skeleton className="w-11 h-11 shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-3 w-1/2" />
+                        <Skeleton className="h-2.5 w-2/3" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {recentCVs?.length === 0 && (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 rounded-card border-2 border-dashed border-forest/35 bg-card/70 px-6 py-6">
+                  <span className="w-14 h-14 rounded-full bg-marigold border-2 border-forest flex items-center justify-center shrink-0" aria-hidden="true">
+                    <FilePlus2 className="w-6 h-6" strokeWidth={2} />
+                  </span>
+                  <div className="flex-1">
+                    <p className="h-display text-2xl">{t.saved.emptyTitle}</p>
+                    <p className="text-muted-foreground mt-1">{t.saved.emptyText}</p>
+                  </div>
+                  <Button onClick={() => navigate('/create')}>
+                    {t.saved.emptyCta} <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+              {recentCVs && recentCVs.length > 0 && (
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {recentCVs.map(cv => (
+                    <button
+                      key={cv.email}
+                      className="group flex items-center justify-between gap-3 text-left rounded-2xl border-2 border-forest bg-card pl-2 pr-5 py-2 shadow-stamp-sm hover:-translate-y-0.5 hover:shadow-stamp transition-[transform,box-shadow] cursor-pointer"
+                      onClick={() => navigate(`/cv/${generateSlug(cv.email)}`)}
+                    >
+                      <span className="flex items-center gap-3 min-w-0">
+                        <span className="w-11 h-11 rounded-full bg-marigold border-2 border-forest flex items-center justify-center font-display text-lg font-bold shrink-0" aria-hidden="true">
+                          {cv.fullName.charAt(0).toUpperCase()}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block font-bold truncate">{cv.fullName}</span>
+                          <span className="block text-xs text-muted-foreground truncate">{cv.email}</span>
+                        </span>
+                      </span>
+                      <ChevronRight className="w-5 h-5 shrink-0 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <Button onClick={() => navigate('/create')}>
-              {t.saved.emptyCta} <ArrowRight className="w-4 h-4" />
-            </Button>
           </div>
-        )}
-        {recentCVs && recentCVs.length > 0 && (
-          <div className="grid sm:grid-cols-2 gap-4">
-            {recentCVs.map(cv => (
-              <button
-                key={cv.email}
-                className="group flex items-center justify-between gap-3 text-left rounded-full border border-foreground bg-card pl-2 pr-5 py-2 hover:bg-secondary transition-colors cursor-pointer"
-                onClick={() => navigate(`/cv/${generateSlug(cv.email)}`)}
-              >
-                <span className="flex items-center gap-3 min-w-0">
-                  <span className="w-11 h-11 rounded-full bg-marigold border border-foreground flex items-center justify-center font-display text-lg font-bold shrink-0" aria-hidden="true">
-                    {cv.fullName.charAt(0).toUpperCase()}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block font-bold truncate">{cv.fullName}</span>
-                    <span className="block text-xs text-muted-foreground truncate">{cv.email}</span>
-                  </span>
-                </span>
-                <ChevronRight className="w-5 h-5 shrink-0 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-        )}
-      </section>
+        </section>
 
-      {/* FAQ — Monad accordion rows */}
-      <section id="faq" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 sm:px-10 py-20 sm:py-28">
-        <div className="grid lg:grid-cols-[1fr_1.6fr] gap-10 lg:gap-16">
-          <div className="lg:sticky lg:top-28 self-start">
-            <SectionHeading title={<>{t.faq.titleA}<br />{t.faq.titleB}</>}>
-              {t.faq.lead}
-            </SectionHeading>
-            <QuestionBubbles className="w-36 sm:w-44 text-forest -mt-4 animate-bob" />
+        {/* FAQ: sticky heading, accordion card */}
+        <section id="faq" data-header="light" className="section scroll-mt-16 border-t border-forest/10 bg-paper-mid">
+          <div className="max-w-[1240px] mx-auto px-5 sm:px-10 grid lg:grid-cols-[1fr_1.5fr] gap-10 lg:gap-16">
+            <div className="lg:sticky lg:top-28 self-start">
+              <SectionHead
+                stacked
+                kicker={t.faq.kicker}
+                title={<>{t.faq.titleA} <Hl>{t.faq.titleHl}</Hl></>}
+                lead={t.faq.lead}
+                className="mb-6"
+              />
+              <Mascot who="sekar" pose="think" className="hidden lg:block w-44 -ml-2" />
+            </div>
+            <div className="rounded-card border-2 border-forest bg-card shadow-stamp px-5 sm:px-8" data-reveal>
+              {t.faq.items.map((f, i) => (
+                <details key={f.q} className={cn('faq-item group', i > 0 && 'border-t border-forest/15')}>
+                  <summary className="flex items-center justify-between gap-6 py-5 sm:py-6 cursor-pointer list-none">
+                    <span className="text-[17px] sm:text-lg font-bold leading-snug">{f.q}</span>
+                    <span className="w-9 h-9 rounded-full bg-forest text-cream flex items-center justify-center shrink-0 transition-transform duration-300 group-open:rotate-45 group-open:bg-marigold group-open:text-forest" aria-hidden="true">
+                      <Plus className="w-5 h-5" strokeWidth={2.5} />
+                    </span>
+                  </summary>
+                  <p className="pb-6 -mt-1 max-w-2xl text-muted-foreground leading-relaxed">{f.a}</p>
+                </details>
+              ))}
+            </div>
           </div>
-          <div className="border-t border-forest/25">
-            {t.faq.items.map(f => (
-              <details key={f.q} className="faq-item group border-b border-forest/25">
-                <summary className="flex items-center justify-between gap-6 py-7 sm:py-9 cursor-pointer list-none">
-                  <span className="font-display text-2xl sm:text-[28px] font-bold uppercase tracking-[-0.02em] leading-tight">
-                    {f.q}
-                  </span>
-                  <span className="w-10 h-10 rounded-full border border-foreground flex items-center justify-center shrink-0 transition-all duration-300 group-open:rotate-180 group-open:bg-marigold" aria-hidden="true">
-                    <ChevronDown className="w-5 h-5" />
-                  </span>
-                </summary>
-                <p className="pb-8 -mt-2 max-w-2xl text-lg text-muted-foreground leading-relaxed">{f.a}</p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA band */}
-      <section className="px-5 sm:px-10 pb-20 sm:pb-28">
-        <div className="relative max-w-[1200px] mx-auto overflow-hidden rounded-card bg-forest text-cream px-7 py-14 sm:px-16 sm:py-20">
-          <Sun className="absolute top-8 right-10 w-20 text-cream/70 hidden sm:block animate-spin-slow" />
-          <Birds className="absolute top-12 right-40 w-16 text-cream/70 animate-drift hidden sm:block" />
-          <SmallCactus className="absolute bottom-0 right-40 w-16 text-cream/60 hidden md:block origin-bottom animate-sway [animation-delay:-1.5s]" />
-          <Cactus className="absolute -bottom-2 right-6 w-28 sm:w-36 text-cream/80 origin-bottom animate-sway" />
-          <CVSheet className="absolute top-10 left-[55%] w-16 text-cream/40 hidden lg:block animate-bob" />
-          <div className="relative max-w-xl">
-            <h2 className="font-display text-5xl sm:text-7xl font-bold uppercase leading-[0.88] tracking-[-0.03em]">
-              {t.cta.titleA}<br />{t.cta.titleB}
-            </h2>
-            <p className="mt-5 text-lg text-cream/80 max-w-md">{t.cta.text}</p>
-            <Button variant="marigold" size="lg" onClick={() => navigate('/create')} className="mt-8 group">
-              {t.cta.button}
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
+        {/* Closing card */}
+        <section data-header="light" className="px-5 sm:px-10 pt-6 pb-24 sm:pb-32">
+          <div data-reveal className="relative max-w-[1080px] mx-auto -rotate-1 rounded-[28px] bg-forest text-cream border-2 border-forest-deep shadow-stamp-marigold px-6 py-14 sm:px-16 sm:py-20 on-dark">
+            <div className="rotate-1 text-center">
+              <div className="mx-auto max-w-sm flex items-center gap-2 text-[11px] font-bold text-cream/60" aria-hidden="true">
+                <span>{t.how.meterStart}</span>
+                <div className="relative flex-1 flex items-center justify-between h-8">
+                  <span className="absolute inset-x-0 top-1/2 h-0.5 bg-cream/20" />
+                  {[0, 1, 2].map(i => (
+                    <span key={i} className={cn('relative w-6 h-6 rounded-full border-2 grid place-items-center text-[10px]', i === 0 ? 'bg-marigold border-marigold text-forest ring-4 ring-marigold/25' : 'bg-forest border-cream/40')}>
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                  ))}
+                </div>
+                <span>{t.how.meterEnd}</span>
+              </div>
+              <p className="font-script text-xl text-marigold -mt-1 mb-6 text-left max-w-sm mx-auto pl-8" aria-hidden="true">↑ {t.cta.here}</p>
+              <h2 className="h-display text-[clamp(38px,6vw,76px)] leading-[1] max-w-3xl mx-auto">
+                {t.cta.titleA} <Hl>{t.cta.titleHl}</Hl>
+              </h2>
+              <p className="mt-6 text-lg text-cream/75 max-w-xl mx-auto">{t.cta.text}</p>
+              <div className="mt-9 flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+                <Button
+                  variant="marigold"
+                  size="lg"
+                  onClick={() => navigate('/create')}
+                  className="group shadow-stamp-cream hover:shadow-[6px_6px_0_0_var(--color-cream)] active:shadow-[1px_1px_0_0_var(--color-cream)]"
+                >
+                  {t.cta.button}
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+                <a href="#faq" className="link-mark inline-flex items-center gap-2 font-bold">
+                  {t.cta.secondary} <ChevronRight className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+            <Mascot who="arya" pose="cheer" className="absolute -bottom-4 -right-3 sm:right-6 w-28 sm:w-40 rotate-1" />
+            <Mascot who="rina" pose="wave" className="hidden md:block absolute -bottom-4 left-6 w-36 rotate-1" />
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       <SiteFooter />
       <StickyCTA />
