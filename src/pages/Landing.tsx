@@ -361,8 +361,8 @@ export default function Landing() {
 
         {/* Closing card */}
         <section data-header="light" className="px-5 sm:px-10 pt-6 pb-24 sm:pb-32">
-          <div data-reveal className="relative max-w-[1080px] mx-auto -rotate-1 rounded-[28px] bg-forest text-cream border-2 border-forest-deep shadow-stamp-marigold px-6 py-14 sm:px-16 sm:py-20 on-dark">
-            <div className="rotate-1 text-center">
+          <div data-reveal className="relative max-w-[1080px] mx-auto rotate-[-1.2deg] rounded-[28px] bg-forest text-cream border-2 border-forest-deep shadow-stamp-marigold px-6 py-14 sm:px-16 sm:py-20 on-dark">
+            <div className="text-center">
               <StepMeter
                 dark
                 count={t.how.steps.length}
