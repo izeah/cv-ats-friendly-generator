@@ -85,7 +85,7 @@ function Hero() {
       <div className="hero-grid" aria-hidden="true"><span /></div>
       <div className="hero-grid is-glow" aria-hidden="true"><span /></div>
       <div className="relative max-w-[1240px] mx-auto px-5 sm:px-10 pt-28 sm:pt-36 pb-20 sm:pb-24 grid lg:grid-cols-[1.08fr_1fr] gap-16 lg:gap-10 items-center">
-        <div className="lg:-rotate-2 lg:origin-left">
+        <div className="-rotate-2 origin-left">
           <p className="flex flex-wrap items-center gap-x-2 text-xs font-bold text-marigold mb-6 animate-fade-in">
             <span>{t.hero.eyebrow}</span>
             <span aria-hidden="true">·</span>

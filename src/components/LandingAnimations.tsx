@@ -44,7 +44,7 @@ export function HeroMockup() {
     const grow = (n: number) => ({ transform: `scaleX(${on(n) ? 1 : 0})` });
 
     return (
-        <div className="relative mx-auto w-full max-w-[440px] lg:max-w-[480px] lg:mr-6" role="img" aria-label={m.label}>
+        <div className="relative mx-auto w-full max-w-[440px] lg:max-w-[480px] lg:mr-6 -rotate-2" role="img" aria-label={m.label}>
             {/* The recruiter scanning, and her verdict once the scan lands */}
             <div
                 className="absolute z-20 -top-12 sm:-top-14 right-0 sm:-right-8 w-[min(15rem,62vw)] rounded-2xl rounded-br-sm border-2 border-forest bg-cream px-3.5 py-2.5 text-[13px] font-semibold leading-snug text-forest shadow-stamp-sm transition-all duration-500"
@@ -60,7 +60,7 @@ export function HeroMockup() {
             <Mascot who="rina" pose="magnify" className="absolute z-10 -right-6 sm:-right-16 -bottom-10 w-32 sm:w-44" />
             <Mascot who="arya" pose="wave" className="absolute z-10 -left-8 sm:-left-16 -bottom-10 w-28 sm:w-36" />
 
-            <div className="on-light relative rounded-card border-2 border-forest bg-card shadow-[8px_8px_0_0_rgb(0_0_0/0.35)] rotate-[-2deg]" aria-hidden="true">
+            <div className="on-light relative rounded-card border-2 border-forest bg-card shadow-[8px_8px_0_0_rgb(0_0_0/0.35)] -rotate-1" aria-hidden="true">
                 <div className="relative overflow-hidden rounded-card p-6 sm:p-8">
                     {step >= SCAN && step < DONE && (
                         <div
