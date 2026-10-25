@@ -108,7 +108,7 @@ export default function Testimonials() {
                 <ul
                     ref={listRef}
                     onScroll={onListScroll}
-                    className="mt-9 flex lg:flex-col gap-3 overflow-x-auto pb-2 -mx-5 px-5 sm:-mx-10 sm:px-10 lg:mx-0 lg:px-0 lg:overflow-visible"
+                    className="mt-9 flex lg:flex-col gap-3 overflow-x-auto pb-2 lg:pb-0 -mx-5 px-5 sm:-mx-10 sm:px-10 lg:mx-0 lg:px-0 lg:overflow-visible"
                 >
                     {tm.items.map((person, i) => {
                         const active = i === idx;
@@ -153,7 +153,8 @@ export default function Testimonials() {
                 </ul>
             </div>
 
-            <div className="relative pb-6 min-w-0">
+            {/* Sticks while the list scrolls, and comes to rest level with the last person in it */}
+            <div className="relative min-w-0 lg:sticky lg:top-24">
                 <div className="relative rounded-card border-2 border-forest bg-card shadow-stamp p-5 sm:p-7">
                     <div className="flex items-center gap-3 pb-4 mb-5 border-b border-forest/15">
                         <span
@@ -236,7 +237,7 @@ export default function Testimonials() {
 
                 {/* Outcome stamp lands on the card once the thread is done */}
                 <div
-                    className="absolute bottom-0 left-6 sm:left-auto sm:right-8 flex items-center gap-2 rounded-full bg-marigold border-2 border-forest px-4 py-2 text-sm font-bold transition-all duration-500"
+                    className="absolute -bottom-5 left-6 sm:left-auto sm:right-8 flex items-center gap-2 rounded-full bg-marigold border-2 border-forest px-4 py-2 text-sm font-bold transition-all duration-500"
                     style={{
                         opacity: stamped && !leaving ? 1 : 0,
                         transform: stamped && !leaving ? "scale(1) rotate(-4deg)" : "scale(1.7) rotate(-18deg)",

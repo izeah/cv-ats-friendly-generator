@@ -369,6 +369,34 @@ body {
   transition-delay: 0.12s, 0.12s, 0s;
 }
 
+/* ===== Story panels (StoryPanels.tsx) ===== */
+@keyframes panel-cycle {
+  0%, 8% { opacity: 0; transform: translateY(6px) scale(0.9); }
+  16%, 86% { opacity: 1; transform: none; }
+  96%, 100% { opacity: 0; transform: none; }
+}
+.panel-cycle {
+  opacity: 0;
+  animation: panel-cycle 5.5s var(--ease-spring) infinite;
+  animation-delay: var(--pd, 0s);
+}
+@keyframes panel-scan {
+  from { top: -25%; }
+  to { top: 110%; }
+}
+.panel-scan {
+  animation: panel-scan 2.6s ease-in-out infinite;
+}
+@keyframes stamp-in {
+  0%, 28% { opacity: 0; transform: scale(1.8) rotate(-24deg); }
+  40%, 88% { opacity: 1; transform: scale(1) rotate(-8deg); }
+  100% { opacity: 0; transform: scale(1) rotate(-8deg); }
+}
+.stamp-in {
+  opacity: 0;
+  animation: stamp-in 4.8s var(--ease-spring) infinite;
+}
+
 /* ===== Footer pantry ===== */
 @keyframes steam {
   0% { opacity: 0; transform: translateY(8px); }
@@ -567,4 +595,6 @@ body {
   .draw-line { stroke-dashoffset: 0; }
   .reveal { opacity: 1; transform: none; }
   [data-reveal] { opacity: 1; translate: none; }
+  .panel-cycle { animation: none !important; opacity: 1; transform: none; }
+  .stamp-in { animation: none !important; opacity: 1; transform: rotate(-8deg); }
 }

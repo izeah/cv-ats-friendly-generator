@@ -195,61 +195,6 @@ export function FormVignette({ offset }: { offset?: number }) {
     );
 }
 
-export function PreviewVignette({ offset }: { offset?: number }) {
-    const v = useI18n().t.vignettes.preview;
-    return (
-        <Vignette
-            label={v.label}
-            offset={offset}
-            render={(on, step) => {
-                const atB = step >= 8;
-                const showChip = (step >= 6 && step < 8) || (step >= 9 && step < 12);
-                return (
-                    <>
-                        <rect x={74} y={12} width={132} height={138} rx={12} className="fill-parchment stroke-forest" strokeWidth={1.5} />
-                        <g style={rise(on(1))}>
-                            <rect x={88} y={24} width={64} height={8} rx={4} className="fill-forest" />
-                            <rect x={88} y={36} width={40} height={4} rx={2} className="fill-forest" opacity={0.35} />
-                        </g>
-                        <rect x={88} y={52} width={30} height={3} rx={1.5} className="fill-forest" opacity={0.6} style={rise(on(2))} />
-                        {[100, 86, 70].map((w, i) => (
-                            <rect key={i} x={88} y={60 + i * 7} width={w} height={3.5} rx={1.75} className="fill-forest" opacity={0.25} style={grow(on(2 + (i > 1 ? 1 : 0)) ? 1 : 0)} />
-                        ))}
-                        <rect x={88} y={90} width={30} height={3} rx={1.5} className="fill-forest" opacity={0.6} style={rise(on(3))} />
-                        <rect x={86} y={96} width={104} height={7} rx={3.5} className="fill-marigold" opacity={0.7} style={grow(on(10) ? 1 : 0)} />
-                        {[96, 80].map((w, i) => (
-                            <rect key={i} x={88} y={98 + i * 7} width={w} height={3.5} rx={1.75} className="fill-forest" opacity={0.25} style={grow(on(3 + i) ? 1 : 0)} />
-                        ))}
-                        <g style={pop(on(4))}>
-                            {[0, 1, 2].map((i) => (
-                                <rect key={i} x={88 + i * 26} y={120} width={22} height={9} rx={4.5} className="fill-forest" />
-                            ))}
-                        </g>
-                        <g style={move(0, atB ? 38 : 0, on(5))}>
-                            <rect x={82} y={46} width={116} height={34} rx={6} className="stroke-marigold" strokeWidth={2} strokeDasharray="4 3" />
-                            {[
-                                [82, 46],
-                                [198, 46],
-                                [82, 80],
-                                [198, 80],
-                            ].map(([x, y]) => (
-                                <rect key={`${x}${y}`} x={x - 2.5} y={y - 2.5} width={5} height={5} className="fill-parchment stroke-forest" strokeWidth={1} />
-                            ))}
-                        </g>
-                        <Cursor style={move(196, atB ? 112 : 74, on(5))} />
-                        <g style={pop(showChip)}>
-                            <Pill x={210} y={atB ? 98 : 60} w={52} text={`✎ ${v.polish}`} dark={false} />
-                        </g>
-                        <g style={pop(on(11))}>
-                            <Pill x={162} y={18} w={36} text={v.live} />
-                        </g>
-                    </>
-                );
-            }}
-        />
-    );
-}
-
 export function ExportVignette({ offset }: { offset?: number }) {
     const v = useI18n().t.vignettes.export;
     return (

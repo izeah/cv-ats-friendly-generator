@@ -12,10 +12,11 @@ import { PipelineDiagram } from '@/components/FlowDiagrams'
 import { HeroMockup, RecruiterChat } from '@/components/LandingAnimations'
 import {
   AtsVignette, BackendVignette, BackupVignette, ExportVignette, FormVignette, InstantVignette, PdfVignette,
-  PreviewVignette, PrivacyVignette,
+  PrivacyVignette,
 } from '@/components/Vignettes'
+import { InvitePanel, OfferPanel, StartPanel } from '@/components/StoryPanels'
 import { SiteFooter, SiteHeader } from '@/components/SiteChrome'
-import { ScrollStory } from '@/components/ScrollStory'
+import { ScrollStory, StepMeter } from '@/components/ScrollStory'
 import { Hl, SectionHead } from '@/components/Section'
 import { Mascot, type Pose, type Who } from '@/components/Mascot'
 import Testimonials from '@/components/Testimonials'
@@ -23,8 +24,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 // Same order as t.features.items and t.how.steps.
 const FEATURE_SCENES = [AtsVignette, PdfVignette, BackendVignette, InstantVignette, PrivacyVignette, BackupVignette]
-const STEP_SCENES = [FormVignette, PreviewVignette, ExportVignette]
-const STEP_CAST: [Who, Pose][] = [['arya', 'type'], ['sekar', 'think'], ['dimas', 'phone']]
+const STEP_SCENES: React.ComponentType<{ offset?: number }>[] = [StartPanel, FormVignette, ExportVignette, InvitePanel, OfferPanel]
+const STEP_CAST: [Who, Pose][] = [['arya', 'think'], ['arya', 'type'], ['dimas', 'phone'], ['rina', 'wave'], ['arya', 'cheer']]
 const SHARING_ICONS = [Share2, Download, Braces, Archive]
 
 /** Mobile-only bar that slides in once the hero CTA has scrolled away. */
@@ -84,7 +85,7 @@ function Hero() {
       <div className="hero-grid" aria-hidden="true"><span /></div>
       <div className="hero-grid is-glow" aria-hidden="true"><span /></div>
       <div className="relative max-w-[1240px] mx-auto px-5 sm:px-10 pt-28 sm:pt-36 pb-20 sm:pb-24 grid lg:grid-cols-[1.08fr_1fr] gap-16 lg:gap-10 items-center">
-        <div>
+        <div className="lg:-rotate-2 lg:origin-left">
           <p className="flex flex-wrap items-center gap-x-2 text-xs font-bold text-marigold mb-6 animate-fade-in">
             <span>{t.hero.eyebrow}</span>
             <span aria-hidden="true">·</span>
@@ -362,19 +363,14 @@ export default function Landing() {
         <section data-header="light" className="px-5 sm:px-10 pt-6 pb-24 sm:pb-32">
           <div data-reveal className="relative max-w-[1080px] mx-auto -rotate-1 rounded-[28px] bg-forest text-cream border-2 border-forest-deep shadow-stamp-marigold px-6 py-14 sm:px-16 sm:py-20 on-dark">
             <div className="rotate-1 text-center">
-              <div className="mx-auto max-w-sm flex items-center gap-2 text-[11px] font-bold text-cream/60" aria-hidden="true">
-                <span>{t.how.meterStart}</span>
-                <div className="relative flex-1 flex items-center justify-between h-8">
-                  <span className="absolute inset-x-0 top-1/2 h-0.5 bg-cream/20" />
-                  {[0, 1, 2].map(i => (
-                    <span key={i} className={cn('relative w-6 h-6 rounded-full border-2 grid place-items-center text-[10px]', i === 0 ? 'bg-marigold border-marigold text-forest ring-4 ring-marigold/25' : 'bg-forest border-cream/40')}>
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                  ))}
-                </div>
-                <span>{t.how.meterEnd}</span>
-              </div>
-              <p className="font-script text-xl text-marigold -mt-1 mb-6 text-left max-w-sm mx-auto pl-8" aria-hidden="true">↑ {t.cta.here}</p>
+              <StepMeter
+                dark
+                count={t.how.steps.length}
+                active={0}
+                ends={[t.how.meterStart, t.how.meterEnd]}
+                caption={t.cta.here}
+                className="mx-auto max-w-xl mb-14"
+              />
               <h2 className="h-display text-[clamp(38px,6vw,76px)] leading-[1] max-w-3xl mx-auto">
                 {t.cta.titleA} <Hl>{t.cta.titleHl}</Hl>
               </h2>
@@ -394,8 +390,6 @@ export default function Landing() {
                 </a>
               </div>
             </div>
-            <Mascot who="arya" pose="cheer" className="absolute -bottom-4 -right-3 sm:right-6 w-28 sm:w-40 rotate-1" />
-            <Mascot who="rina" pose="wave" className="hidden md:block absolute -bottom-4 left-6 w-36 rotate-1" />
           </div>
         </section>
       </main>

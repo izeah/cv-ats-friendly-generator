@@ -62,8 +62,14 @@ Scale (clamp, desktop → phone): hero `44–92px`, section `34–58px`, step `2
   (`.hero-grid`, `.hero-grid.is-glow`, `--mx/--my`). The hero pulls up under the
   header with `-mt-16`.
 - **Sticky story** (`ScrollStory`): steps scroll on the left; a pinned screen on
-  the right swaps panels, tints towards marigold, and fills a progress meter.
-  On phones the screen pins to the top as a band above the text.
+  the right swaps panels and tints towards marigold. On phones the screen pins
+  to the top as a band above the text. The landing tells it in five stops,
+  00 "you are here" to 04 "hired".
+- **Step meter** (`StepMeter`): numbered stops on a dashed marigold line, the
+  current one marigold with a halo and a handwritten caption under it. Used by
+  the story and, with `dark`, by the closing card, so both read as one journey.
+- **Sticky side card**: a card beside a list sticks while the list scrolls and
+  comes to rest level with the last item (testimonials).
 - **Section rhythm**: `.section` padding `clamp(76px, 9vw, 132px)`; content
   width `1240px` with `px-5 sm:px-10`.
 

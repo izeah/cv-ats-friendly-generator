@@ -1,13 +1,102 @@
 // Sticky story: the steps scroll by on the left while one "screen" stays pinned
 // on the right and swaps its panel to match the step in the middle of the
 // viewport. On phones the screen pins to the top as a band above the text.
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type Step = { label: string; title: string; description: string; tag: string };
 
 // Marigold creeps into the screen as the story moves on.
-const SCREEN_TINTS = ["#fffefa", "#fffbe2", "#fff5b3", "#ffef80"];
+const SCREEN_TINTS = ["#fffefa", "#fffcea", "#fff8c8", "#fff3a3", "#ffee7a"];
+
+const pad = (i: number) => String(i).padStart(2, "0");
+
+// Dashes for the meter line: marigold on the stretch already walked (and on
+// dark surfaces), muted ink for the road ahead on light ones.
+const DASH_LIT = (gap: string) => `repeating-linear-gradient(90deg, var(--color-marigold) 0 16px, ${gap} 16px 24px)`;
+const DASH_DIM = "repeating-linear-gradient(90deg, rgb(16 56 11 / 0.22) 0 16px, transparent 16px 24px)";
+
+/** Numbered stops on a dashed line, the current one marigold with a halo and a
+ *  handwritten caption underneath. `dark` for forest surfaces. */
+export function StepMeter({
+    count,
+    active,
+    ends,
+    caption,
+    dark,
+    onPick,
+    className,
+}: {
+    count: number;
+    active: number;
+    ends: [string, string];
+    caption?: string;
+    dark?: boolean;
+    onPick?: (index: number) => void;
+    className?: string;
+}) {
+    const progress = count > 1 ? active / (count - 1) : 0;
+    const Dot = onPick ? "button" : "span";
+    return (
+        <div className={cn("flex items-center gap-3 sm:gap-5", className)} aria-hidden="true">
+            <span className={cn("hidden min-[420px]:inline text-[13px] sm:text-sm font-bold", dark ? "text-cream/85" : "text-muted-foreground")}>{ends[0]}</span>
+            <div className="relative flex-1 flex items-center justify-between h-14">
+                {/* Line runs centre to centre of the first and last stop */}
+                <span
+                    className="absolute left-[18px] right-[18px] top-1/2 h-[3px] -translate-y-1/2"
+                    style={{ background: dark ? DASH_LIT("rgb(245 244 236 / 0.3)") : DASH_DIM }}
+                />
+                {!dark && (
+                    <span
+                        className="absolute left-[18px] top-1/2 h-[3px] -translate-y-1/2 transition-[width] duration-500 ease-out"
+                        style={{ width: `calc((100% - 36px) * ${progress})`, background: DASH_LIT("var(--color-forest)") }}
+                    />
+                )}
+                {Array.from({ length: count }, (_, i) => {
+                    const current = i === active;
+                    return (
+                        <span key={i} className="relative z-[1] grid place-items-center w-9 h-9">
+                            {current && (
+                                <span className={cn("absolute w-16 h-16 rounded-full", dark ? "bg-black/25" : "bg-marigold/35")} />
+                            )}
+                            <Dot
+                                {...(onPick ? { type: "button" as const, tabIndex: -1, onClick: () => onPick(i) } : {})}
+                                className={cn(
+                                    "relative grid place-items-center rounded-full font-bold tabular-nums transition-all duration-300",
+                                    onPick && "cursor-pointer",
+                                    current
+                                        ? "w-11 h-11 text-[15px] bg-marigold text-forest-deep border-[3px] border-forest-deep"
+                                        : cn(
+                                              "w-9 h-9 text-[13px] border-2",
+                                              dark
+                                                  ? "bg-forest border-cream/35 text-cream/90"
+                                                  : i < active
+                                                    ? "bg-forest border-forest text-cream"
+                                                    : "bg-card border-forest/30 text-muted-foreground",
+                                          ),
+                                )}
+                            >
+                                {pad(i)}
+                            </Dot>
+                            {current && caption && (
+                                <span
+                                    className={cn(
+                                        "absolute top-full mt-3 font-script text-xl font-bold whitespace-nowrap",
+                                        i === 0 ? "left-0" : i === count - 1 ? "right-0" : "left-1/2 -translate-x-1/2",
+                                        dark ? "text-marigold" : "text-script",
+                                    )}
+                                >
+                                    {caption}
+                                </span>
+                            )}
+                        </span>
+                    );
+                })}
+            </div>
+            <span className={cn("hidden min-[420px]:inline text-[13px] sm:text-sm font-bold", dark ? "text-cream/85" : "text-muted-foreground")}>{ends[1]}</span>
+        </div>
+    );
+}
 
 export function ScrollStory({
     steps,
@@ -41,7 +130,6 @@ export function ScrollStory({
     }, [steps.length]);
 
     const last = steps.length - 1;
-    const progress = last > 0 ? active / last : 1;
     const jump = (i: number) =>
         items.current[i]?.scrollIntoView({ behavior: "smooth", block: "center" });
 
@@ -57,14 +145,14 @@ export function ScrollStory({
                         data-index={i}
                         data-current={i === active || undefined}
                         className={cn(
-                            "story-step grid content-center gap-3.5 py-8 min-h-[58vh]",
+                            "story-step grid content-center gap-3.5 py-8 min-h-[56vh]",
                             i === 0 && "lg:min-h-[calc(100svh-4rem)]",
-                            i === last ? "lg:min-h-[66svh]" : "lg:min-h-[64vh]",
+                            i === last ? "lg:min-h-[66svh]" : "lg:min-h-[60vh]",
                         )}
                     >
                         <p className="flex items-center gap-2.5 font-script text-2xl font-bold text-script">
                             <span className="rounded-full bg-forest text-cream font-sans text-xs font-bold tracking-wider px-2.5 py-1">
-                                {String(i + 1).padStart(2, "0")}
+                                {pad(i)}
                             </span>
                             {step.label}
                         </p>
@@ -75,43 +163,19 @@ export function ScrollStory({
             </ol>
 
             {/* The pinned screen. order-first on phones so it sticks above the steps. */}
-            <div
-                className="order-first lg:order-none lg:col-start-2 lg:row-start-1 self-stretch lg:self-start sticky top-16 z-10 -mx-5 px-5 pt-3 pb-4 bg-[var(--story-bg,var(--color-background))] lg:mx-0 lg:px-0 lg:bg-transparent lg:h-[calc(100svh-4rem)] lg:flex lg:flex-col lg:justify-center lg:gap-5 lg:py-6"
-                style={{ "--p": progress } as CSSProperties}
-            >
-                <div className="flex items-center gap-3 mb-3 lg:mb-0" aria-hidden="true">
-                    <span className="text-[11px] font-bold text-muted-foreground">{meter[0]}</span>
-                    <div className="relative flex-1 flex items-center justify-between h-9">
-                        <span className="absolute inset-x-0 top-1/2 h-1 -mt-0.5 rounded-full bg-forest/12" />
-                        <span
-                            className="absolute left-0 top-1/2 h-1 -mt-0.5 rounded-full bg-forest transition-[width] duration-500 ease-out"
-                            style={{ width: `calc(var(--p) * 100%)` }}
-                        />
-                        {steps.map((_, i) => (
-                            <button
-                                key={i}
-                                type="button"
-                                tabIndex={-1}
-                                onClick={() => jump(i)}
-                                className={cn(
-                                    "relative z-[1] grid place-items-center w-8 h-8 rounded-full border-2 text-[11px] font-bold cursor-pointer transition-all duration-300",
-                                    i === active
-                                        ? "bg-marigold border-forest text-forest shadow-stamp-sm scale-115"
-                                        : i < active
-                                          ? "bg-forest border-forest text-cream"
-                                          : "bg-card border-forest/30 text-muted-foreground",
-                                )}
-                            >
-                                {String(i + 1).padStart(2, "0")}
-                            </button>
-                        ))}
-                    </div>
-                    <span className="text-[11px] font-bold text-muted-foreground">{meter[1]}</span>
-                </div>
+            <div className="order-first lg:order-none lg:col-start-2 lg:row-start-1 self-stretch lg:self-start sticky top-16 z-10 -mx-5 px-5 pt-2 pb-4 bg-[var(--story-bg,var(--color-background))] lg:mx-0 lg:px-0 lg:bg-transparent lg:h-[calc(100svh-4rem)] lg:flex lg:flex-col lg:justify-center lg:gap-4 lg:py-6">
+                <StepMeter
+                    count={steps.length}
+                    active={active}
+                    ends={meter}
+                    caption={steps[active].label}
+                    onPick={jump}
+                    className="mb-9 lg:mb-7"
+                />
 
                 <div className="relative">
                     <div
-                        className="grid-paper relative h-[230px] sm:h-[280px] lg:h-[min(400px,calc(100svh-15rem))] rounded-[18px] border-2 border-forest shadow-stamp overflow-hidden transition-colors duration-700"
+                        className="grid-paper relative h-[220px] sm:h-[280px] lg:h-[min(390px,calc(100svh-17rem))] rounded-[18px] border-2 border-forest shadow-stamp overflow-hidden transition-colors duration-700"
                         style={{ backgroundColor: SCREEN_TINTS[Math.min(active, SCREEN_TINTS.length - 1)] }}
                     >
                         {steps.map((step, i) => (
@@ -122,9 +186,9 @@ export function ScrollStory({
                                 className="story-panel absolute inset-0 grid grid-rows-[auto_1fr] p-4 sm:p-6"
                             >
                                 <div className="flex items-start justify-between gap-3">
-                                    <p className="flex items-baseline gap-2">
-                                        <span className="h-display text-3xl sm:text-4xl">{String(i + 1).padStart(2, "0")}</span>
-                                        <span className="font-script text-xl sm:text-2xl font-bold text-script">{step.label}</span>
+                                    <p className="flex items-baseline gap-2 min-w-0">
+                                        <span className="h-display text-3xl sm:text-4xl">{pad(i)}</span>
+                                        <span className="font-script text-xl sm:text-2xl font-bold text-script truncate pr-1.5">{step.label}</span>
                                     </p>
                                     <span className="rounded-full border-2 border-forest bg-card px-3 py-1 text-xs font-bold whitespace-nowrap">
                                         {step.tag}
