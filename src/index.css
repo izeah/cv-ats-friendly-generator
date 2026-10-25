@@ -100,16 +100,6 @@
   to { opacity: 1; transform: none; }
 }
 
-@keyframes logo-scan {
-  0%, 100% { transform: translateY(-9px); }
-  50% { transform: translateY(9px); }
-}
-
-@keyframes twinkle {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.45; transform: scale(0.7); }
-}
-
 @keyframes typing {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
   30% { transform: translateY(-4px); opacity: 1; }
@@ -530,13 +520,21 @@ body {
 }
 
 /* ===== Illustration motion ===== */
-.logo-scan { animation: logo-scan 3.2s ease-in-out infinite; }
-.twinkle,
+/* The logo's marigold line gets re-highlighted now and then, like a marker swipe */
+@keyframes logo-line {
+  0%, 62%, 100% { transform: scaleX(1); }
+  70% { transform: scaleX(0.3); }
+  84% { transform: scaleX(1); }
+}
+.logo-line {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: logo-line 5s var(--ease-out-expo) infinite;
+}
 .typing-dot {
   transform-box: fill-box;
   transform-origin: center;
 }
-.twinkle { animation: twinkle 2.4s ease-in-out infinite; }
 .typing-dot { animation: typing 1.2s ease-in-out infinite; }
 
 /* ===== Card vignettes (mini animated scenes) ===== */

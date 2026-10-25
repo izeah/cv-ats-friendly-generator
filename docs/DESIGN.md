@@ -7,6 +7,12 @@ ailene.id and rebuilt here with our own palette, copy and characters.
 
 Source of truth for values: `src/index.css` (`@theme` and the sections below it).
 
+## Logo
+
+"Brackets": two code brackets form a CV page with a folded corner; the middle
+line is marigold. In the app use `<LogoMark />` (`onDark` on forest, `small` at
+32 px and below). Masters, web icons and the usage guide: `docs/brand/`.
+
 ## Colour
 
 One accent, used sparingly, on warm paper. Dark sections use Forest.

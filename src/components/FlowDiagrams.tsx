@@ -53,7 +53,7 @@ function Hub({ className, label }: { className?: string; label: string }) {
         <div className={cn("relative aspect-square", className)}>
             <div className="absolute -inset-[30%] rounded-full bg-marigold blur-2xl animate-hub-glow" />
             <div className="reveal relative w-full h-full rounded-full bg-forest text-cream border-2 border-forest flex flex-col items-center justify-center text-center shadow-stamp-cream">
-                <LogoMark className="w-[42%] h-[42%] mb-1.5" />
+                <LogoMark onDark className="w-[46%] h-[46%] mb-1" />
                 <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-cream/80">
                     {label}
                 </span>

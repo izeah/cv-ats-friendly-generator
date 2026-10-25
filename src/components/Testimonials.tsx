@@ -181,7 +181,7 @@ export default function Testimonials() {
                             return (
                                 <div key={`${idx}-${i}`} className={cn("animate-pop-in flex items-end gap-2", ours && "flex-row-reverse")}>
                                     {ours ? (
-                                        <LogoMark className="w-8 h-8" />
+                                        <LogoMark small className="w-8 h-8" />
                                     ) : (
                                         <span
                                             className="w-8 h-8 rounded-full bg-sage border border-forest/40 flex items-center justify-center text-[11px] font-bold shrink-0"
@@ -214,7 +214,7 @@ export default function Testimonials() {
                         {typing && next && (
                             <div className={cn("animate-pop-in flex items-end gap-2", next.from === "us" && "flex-row-reverse")} aria-hidden="true">
                                 {next.from === "us" ? (
-                                    <LogoMark className="w-8 h-8" />
+                                    <LogoMark small className="w-8 h-8" />
                                 ) : (
                                     <span className="w-8 h-8 rounded-full bg-sage border border-forest/40 flex items-center justify-center text-[11px] font-bold shrink-0">
                                         {story.initials}
