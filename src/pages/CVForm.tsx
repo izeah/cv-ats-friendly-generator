@@ -38,6 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import Sidebar from "@/components/Sidebar";
+import CVHeaderMenu from "@/components/CVHeaderMenu";
 import TeamTip from "@/components/TeamTip";
 import { LanguageSwitcher } from "@/components/Language";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -834,6 +835,7 @@ export default function CVForm() {
                                 <Button
                                     variant="outline"
                                     size="sm"
+                                    className="mobile:hidden"
                                     onClick={() => handleSave(false)}
                                     disabled={saving}
                                     aria-label={saveLabel}
@@ -844,6 +846,7 @@ export default function CVForm() {
                             <Tooltip label={f.preview} shortcut={SHORTCUTS.savePreview}>
                                 <Button
                                     size="sm"
+                                    className="mobile:hidden"
                                     onClick={() => handleSave(true)}
                                     disabled={saving}
                                     aria-label={f.preview}
@@ -856,6 +859,23 @@ export default function CVForm() {
                                     <span className="hidden sm:inline">{f.preview}</span>
                                 </Button>
                             </Tooltip>
+                            {/* Phone mode: New CV + a menu in place of Save / Preview */}
+                            <CVHeaderMenu
+                                className="desk:hidden"
+                                email={email.trim().toLowerCase()}
+                                savingMode={savingMode}
+                                onSave={() => handleSave(false)}
+                                onPreview={() => handleSave(true)}
+                                onNewCV={() => {
+                                    navigate("/create");
+                                    resetForm();
+                                }}
+                                onChanged={() => setSidebarRefresh((n) => n + 1)}
+                                onDeleted={() => {
+                                    resetForm();
+                                    navigate("/create");
+                                }}
+                            />
                         </div>
                     </div>
                 </header>

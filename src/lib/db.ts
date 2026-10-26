@@ -87,10 +87,12 @@ export const db = new CVDatabase()
 export async function saveCVData(data: CVData): Promise<void> {
   const existing = await db.cvs.get(data.email)
   if (existing) {
-    // The form sends a fresh createdAt on every save; keep the first one.
+    // The form sends a fresh createdAt and isArchived: false on every save; keep the
+    // stored ones, or autosave would undo an archive made while the CV is open.
     await db.cvs.update(data.email, {
       ...data,
       createdAt: existing.createdAt,
+      isArchived: existing.isArchived,
       updatedAt: new Date(),
     })
   } else {

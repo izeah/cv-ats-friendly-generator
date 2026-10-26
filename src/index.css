@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* "Phone mode": a small screen or a touch-only one (no hover, so no keyboard either).
+   desk: is its complement. The .hotkey rule below uses the same split. */
+@custom-variant mobile (@media (max-width: 639.98px), (hover: none));
+@custom-variant desk (@media (min-width: 640px) and (hover: hover));
+
 /* Colors, type, motion and layout follow docs/DESIGN.md: Forest Ink + Marigold
    stickers on warm paper, a dark hero, handwritten kickers and a sticky story.
    Diagram motion and the FAQ structure follow DESIGN-Monad.md. */
