@@ -836,7 +836,7 @@ export default function CVForm() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="mobile:hidden"
+                                    className="max-lg:hidden"
                                     onClick={() => handleSave(false)}
                                     disabled={saving}
                                     aria-label={saveLabel}
@@ -847,7 +847,7 @@ export default function CVForm() {
                             <Tooltip label={f.preview} shortcut={SHORTCUTS.savePreview}>
                                 <Button
                                     size="sm"
-                                    className="mobile:hidden"
+                                    className="max-lg:hidden"
                                     onClick={() => handleSave(true)}
                                     disabled={saving}
                                     aria-label={f.preview}
