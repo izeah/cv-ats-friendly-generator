@@ -40,6 +40,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Sidebar from "@/components/Sidebar";
 import TeamTip from "@/components/TeamTip";
 import { LanguageSwitcher } from "@/components/Language";
+import { Tooltip } from "@/components/ui/tooltip";
+import { ShortcutKeys } from "@/components/ui/kbd";
 import {
     saveCVData,
     getCVByEmail,
@@ -49,6 +51,7 @@ import {
 } from "@/lib/db";
 import { cn, generateSlug, monthName } from "@/lib/utils";
 import { fill, useI18n, usePageMeta } from "@/lib/i18n";
+import { SHORTCUTS, useShortcut } from "@/lib/shortcuts";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 30 }, (_, i) =>
@@ -733,6 +736,9 @@ export default function CVForm() {
         }
     };
 
+    useShortcut(SHORTCUTS.save, () => !saving && handleSave(false));
+    useShortcut(SHORTCUTS.savePreview, () => !saving && handleSave(true));
+
     // Auto-save every 10 seconds once the CV has a name and a valid email
     useEffect(() => {
         const autoSaveInterval = setInterval(async () => {
@@ -824,28 +830,32 @@ export default function CVForm() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                             <LanguageSwitcher compact />
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleSave(false)}
-                                disabled={saving}
-                                aria-label={saveLabel}
-                            >
-                                {saveIcon} <span className="hidden sm:inline">{saveLabel}</span>
-                            </Button>
-                            <Button
-                                size="sm"
-                                onClick={() => handleSave(true)}
-                                disabled={saving}
-                                aria-label={f.preview}
-                            >
-                                {savingMode === "preview" ? (
-                                    <LoaderCircle className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
-                                ) : (
-                                    <Eye className="w-3.5 h-3.5" aria-hidden="true" />
-                                )}
-                                <span className="hidden sm:inline">{f.preview}</span>
-                            </Button>
+                            <Tooltip label={f.save} shortcut={SHORTCUTS.save}>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleSave(false)}
+                                    disabled={saving}
+                                    aria-label={saveLabel}
+                                >
+                                    {saveIcon} <span className="hidden sm:inline">{saveLabel}</span>
+                                </Button>
+                            </Tooltip>
+                            <Tooltip label={f.preview} shortcut={SHORTCUTS.savePreview}>
+                                <Button
+                                    size="sm"
+                                    onClick={() => handleSave(true)}
+                                    disabled={saving}
+                                    aria-label={f.preview}
+                                >
+                                    {savingMode === "preview" ? (
+                                        <LoaderCircle className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                                    ) : (
+                                        <Eye className="w-3.5 h-3.5" aria-hidden="true" />
+                                    )}
+                                    <span className="hidden sm:inline">{f.preview}</span>
+                                </Button>
+                            </Tooltip>
                         </div>
                     </div>
                 </header>
@@ -990,6 +1000,7 @@ export default function CVForm() {
                                     <Save className="w-4 h-4" aria-hidden="true" />
                                 )}
                                 {savingMode === "save" ? f.saving : justSaved ? f.saved : f.saveDraft}
+                                <ShortcutKeys shortcut={SHORTCUTS.save} className="hidden sm:inline-flex ml-1 opacity-60" />
                             </Button>
                             <Button type="button" size="lg" className="flex-1" onClick={() => handleSave(true)} disabled={saving}>
                                 {savingMode === "preview" ? (
@@ -998,6 +1009,7 @@ export default function CVForm() {
                                     <FileCheck className="w-4 h-4" aria-hidden="true" />
                                 )}
                                 {savingMode === "preview" ? f.building : f.previewBuild}
+                                <ShortcutKeys shortcut={SHORTCUTS.savePreview} className="hidden sm:inline-flex ml-1 opacity-70" />
                             </Button>
                         </div>
                     </div>

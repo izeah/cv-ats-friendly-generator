@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import * as Dialog from "@radix-ui/react-dialog";
 import {
     Plus,
     Trash2,
@@ -12,8 +13,20 @@ import {
     CircleCheck,
     CircleAlert,
     LoaderCircle,
+    Search,
+    Pin,
+    PinOff,
+    Pencil,
+    ExternalLink,
+    House,
+    Languages,
+    PanelLeft,
+    ShieldCheck,
+    ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
     db,
     getAllCVs,
@@ -21,15 +34,21 @@ import {
     getCVByEmail,
     deleteCVByEmail,
     toggleArchive,
+    togglePin,
+    renameCV,
     downloadCVJson,
     parseCVJson,
+    cvTitle,
     type CVData,
 } from "@/lib/db";
 import { generateSlug, cn } from "@/lib/utils";
 import { fill, rich, useI18n } from "@/lib/i18n";
+import { SHORTCUTS, useShortcut } from "@/lib/shortcuts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip } from "@/components/ui/tooltip";
 import { LogoMark, Wordmark } from "@/components/Illustrations";
 import { Mascot } from "@/components/Mascot";
+import { SearchPalette, type PaletteAction } from "@/components/SearchPalette";
 
 interface SidebarProps {
     currentEmail?: string;
@@ -40,8 +59,7 @@ interface SidebarProps {
     onToggleSidebar?: () => void;
 }
 
-const menuItem =
-    "w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-secondary transition-colors border-b border-forest/10 last:border-b-0";
+const menuItem = "w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm text-left hover:bg-secondary transition-colors";
 
 /** Show/hide sidebar toggle: a window with its side panel drawn full height
  *  while the sidebar is open, shrunk to a short bar while it is hidden. */
@@ -66,22 +84,69 @@ function SidebarIcon({ open, className }: { open: boolean; className?: string })
 const toggleButton =
     "w-8 h-8 rounded-lg items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors";
 
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+const byPinnedAt = (a: CVData, b: CVData) =>
+    new Date(b.pinnedAt ?? 0).getTime() - new Date(a.pinnedAt ?? 0).getTime();
+
+function Modal({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
+    // Radix stacks dialogs, so these open cleanly on top of the search palette.
     return (
-        <>
-            <div className="fixed inset-0 bg-forest/40 backdrop-blur-sm z-[100] animate-fade-in" onClick={onClose} />
-            <div className="fixed inset-0 flex items-center justify-center z-[101] animate-fade-in p-4 pointer-events-none">
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={title}
-                    className="bg-card border-2 border-forest rounded-card shadow-stamp max-w-sm w-full animate-scale-in pointer-events-auto p-8"
-                >
-                    <h2 className="h-display text-3xl text-foreground mb-3">{title}</h2>
-                    {children}
+        <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
+            <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 bg-forest/40 backdrop-blur-sm z-[100] animate-fade-in" />
+                <div className="fixed inset-0 flex items-center justify-center z-[101] p-4 pointer-events-none">
+                    <Dialog.Content
+                        aria-describedby={undefined}
+                        className="bg-card border-2 border-forest rounded-card shadow-stamp max-w-sm w-full animate-scale-in pointer-events-auto p-8"
+                    >
+                        <Dialog.Title className="h-display text-3xl text-foreground mb-3">{title}</Dialog.Title>
+                        {children}
+                    </Dialog.Content>
                 </div>
-            </div>
-        </>
+            </Dialog.Portal>
+        </Dialog.Root>
+    );
+}
+
+function RenameModal({ cv, onSave, onClose }: { cv: CVData; onSave: (label: string) => void; onClose: () => void }) {
+    const { t } = useI18n();
+    const s = t.sidebar;
+    const [value, setValue] = useState(cvTitle(cv));
+    return (
+        <Modal title={s.renameTitle} onClose={onClose}>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    onSave(value);
+                }}
+            >
+                <Label htmlFor="cv-label" className="text-xs">
+                    {s.renameLabel}
+                </Label>
+                <Input
+                    id="cv-label"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    onFocus={(e) => e.currentTarget.select()}
+                    maxLength={80}
+                    className="mt-1.5"
+                    autoComplete="off"
+                />
+                <p className="text-xs text-muted-foreground mt-2.5">
+                    {rich(s.renameHint, { name: <span className="font-bold text-foreground">{cv.fullName}</span> })}
+                </p>
+                {cv.label && (
+                    <button type="button" className="link-mark text-xs font-bold mt-3 cursor-pointer" onClick={() => onSave("")}>
+                        {s.renameReset}
+                    </button>
+                )}
+                <div className="flex gap-3 justify-end mt-6">
+                    <Button type="button" variant="ghost" onClick={onClose}>
+                        {t.common.cancel}
+                    </Button>
+                    <Button type="submit">{t.common.save}</Button>
+                </div>
+            </form>
+        </Modal>
     );
 }
 
@@ -95,7 +160,7 @@ export default function Sidebar({
 }: SidebarProps) {
     const navigate = useNavigate();
     const location = useLocation();
-    const { t } = useI18n();
+    const { t, lang, setLang } = useI18n();
     const s = t.sidebar;
     const [cvs, setCvs] = useState<CVData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -104,6 +169,8 @@ export default function Sidebar({
     const [showArchived, setShowArchived] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<CVData | null>(null);
+    const [renameTarget, setRenameTarget] = useState<CVData | null>(null);
+    const [paletteOpen, setPaletteOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importing, setImporting] = useState(false);
     const [pendingImport, setPendingImport] = useState<CVData | null>(null);
@@ -162,6 +229,27 @@ export default function Sidebar({
         await loadData();
     };
 
+    const handleTogglePin = async (cv: CVData) => {
+        await togglePin(cv.email);
+        await loadData();
+    };
+
+    const handleRename = async (label: string) => {
+        if (!renameTarget) return;
+        await renameCV(renameTarget.email, label);
+        setRenameTarget(null);
+        await loadData();
+    };
+
+    const openInNewTab = (cv: CVData) => {
+        window.open(`/create?email=${encodeURIComponent(cv.email)}`, "_blank", "noopener");
+    };
+
+    const openPreview = (cv: CVData) => {
+        navigate(`/cv/${generateSlug(cv.email)}`);
+        setIsMobileOpen(false);
+    };
+
     const handleExport = (cv: CVData) => {
         downloadCVJson(cv);
         setToast({ type: "success", message: fill(s.toastExported, { name: cv.fullName }) });
@@ -211,16 +299,94 @@ export default function Sidebar({
         setIsMobileOpen(false);
     };
 
+    const pickImportFile = () => fileInputRef.current?.click();
+
+    // The rail collapses on desktop; on phones the same shortcut opens and closes the drawer.
+    const toggleSidebar = () => {
+        if (window.matchMedia("(min-width: 1024px)").matches) onToggleSidebar?.();
+        else setIsMobileOpen((open) => !open);
+    };
+
+    // Off while a confirm/rename dialog is up; on inside the palette, which lists them.
+    const keys = { enabled: !deleteTarget && !renameTarget && !pendingImport, inDialogs: true };
+    useShortcut(SHORTCUTS.search, () => setPaletteOpen((open) => !open), keys);
+    useShortcut(SHORTCUTS.newCV, () => { setPaletteOpen(false); handleNewCV(); }, keys);
+    useShortcut(SHORTCUTS.importCV, () => { setPaletteOpen(false); pickImportFile(); }, keys);
+    useShortcut(SHORTCUTS.toggleSidebar, toggleSidebar, keys);
+    useShortcut(SHORTCUTS.home, () => { setPaletteOpen(false); navigate("/"); }, keys);
+
+    const hints = t.search.hints;
+    const paletteActions: PaletteAction[] = [
+        { id: "new", label: s.newCV, hint: hints.newCV, icon: Plus, tone: "marigold", shortcut: SHORTCUTS.newCV, run: handleNewCV },
+        { id: "import", label: s.importTitle, hint: hints.importCV, icon: Upload, tone: "sky", shortcut: SHORTCUTS.importCV, run: pickImportFile },
+        {
+            id: "sidebar",
+            label: isCollapsed ? s.expand : s.collapse,
+            hint: isCollapsed ? hints.showSidebar : hints.hideSidebar,
+            icon: PanelLeft,
+            tone: "sage",
+            shortcut: SHORTCUTS.toggleSidebar,
+            run: toggleSidebar,
+        },
+        { id: "language", label: t.search.switchLanguage, hint: hints.language, icon: Languages, tone: "coral", run: () => setLang(lang === "en" ? "id" : "en") },
+        { id: "home", label: s.goHome, hint: hints.home, icon: House, tone: "cream", shortcut: SHORTCUTS.home, run: () => navigate("/") },
+        { id: "privacy", label: t.common.privacy, hint: hints.privacy, icon: ShieldCheck, tone: "cream", run: () => navigate("/privacy") },
+        { id: "terms", label: t.common.terms, hint: hints.terms, icon: ScrollText, tone: "cream", run: () => navigate("/terms") },
+    ];
+
     const displayCvs = showArchived ? archivedCvs : cvs;
+    const pinnedCvs = showArchived ? [] : displayCvs.filter((cv) => cv.isPinned).sort(byPinnedAt);
+    const otherCvs = showArchived ? displayCvs : displayCvs.filter((cv) => !cv.isPinned);
+    const sectioned = pinnedCvs.length > 0;
+    // Tooltips sit beside the narrow rail, under the buttons when the sidebar is open.
+    const tipSide = isCollapsed ? "right" : "bottom";
 
     const renderMenu = (cv: CVData) => (
-        <div className="absolute right-0 mt-1 w-44 bg-card border-2 border-forest rounded-2xl shadow-stamp z-50 overflow-hidden animate-fade-in">
+        <div className="absolute right-0 mt-1 w-52 bg-card border-2 border-forest rounded-2xl shadow-stamp z-50 p-1.5 origin-top-right animate-[tooltip-in_0.14s_cubic-bezier(0.16,1,0.3,1)]">
             <button
                 className={cn(menuItem, "text-foreground")}
                 onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/cv/${generateSlug(cv.email)}`);
-                    setIsMobileOpen(false);
+                    setRenameTarget(cv);
+                    setOpenDropdown(null);
+                }}
+            >
+                <Pencil className="w-4 h-4 text-primary/70" aria-hidden="true" />
+                {s.rename}
+            </button>
+            <button
+                className={cn(menuItem, "text-foreground")}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    openInNewTab(cv);
+                    setOpenDropdown(null);
+                }}
+            >
+                <ExternalLink className="w-4 h-4 text-primary/70" aria-hidden="true" />
+                {s.openNewTab}
+            </button>
+            {!cv.isArchived && (
+                <button
+                    className={cn(menuItem, "text-foreground")}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleTogglePin(cv);
+                        setOpenDropdown(null);
+                    }}
+                >
+                    {cv.isPinned ? (
+                        <PinOff className="w-4 h-4 text-primary/70" aria-hidden="true" />
+                    ) : (
+                        <Pin className="w-4 h-4 text-primary/70" aria-hidden="true" />
+                    )}
+                    {cv.isPinned ? s.unpin : s.pin}
+                </button>
+            )}
+            <button
+                className={cn(menuItem, "text-foreground")}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    openPreview(cv);
                     setOpenDropdown(null);
                 }}
             >
@@ -258,6 +424,7 @@ export default function Sidebar({
                     </>
                 )}
             </button>
+            <div className="my-1 h-px bg-forest/15" role="separator" />
             <button
                 className={cn(menuItem, "text-destructive hover:bg-destructive/10")}
                 onClick={(e) => {
@@ -290,92 +457,225 @@ export default function Sidebar({
         </button>
     );
 
+    const sectionLabel = (label: string) =>
+        !isCollapsed && (
+            <p className="px-2.5 pt-3 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+        );
+
+    const renderItem = (cv: CVData) => {
+        const isActive = currentEmail === cv.email && location.pathname === "/create";
+        const title = cvTitle(cv);
+        const menuOpen = openDropdown === cv.email;
+        // Room for the hover buttons: pin + menu on active CVs, menu only in the archive.
+        const actionRoom = cv.isArchived
+            ? "pr-8 lg:pr-0 lg:group-hover:pr-8 lg:group-focus-within:pr-8"
+            : "pr-16 lg:pr-0 lg:group-hover:pr-16 lg:group-focus-within:pr-16";
+        return (
+            <div
+                key={cv.email}
+                className={cn(
+                    "group relative rounded-2xl transition-all duration-150",
+                    // The hover buttons sit in a transformed box (its own stacking context),
+                    // so lift the whole row while its menu is open or later rows cover it.
+                    menuOpen && "z-30",
+                    isActive
+                        ? "bg-secondary border-2 border-forest"
+                        : "hover:bg-secondary/60 border-2 border-transparent",
+                )}
+            >
+                <Tooltip label={title} side="right" disabled={!isCollapsed}>
+                    <button
+                        type="button"
+                        className={cn(
+                            "w-full flex items-center gap-2.5 p-2.5 text-left rounded-[14px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marigold",
+                            isCollapsed && "justify-center p-2",
+                        )}
+                        onClick={() => handleSelect(cv.email)}
+                        aria-current={isActive ? "page" : undefined}
+                        aria-label={isCollapsed ? title : undefined}
+                    >
+                        {/* Avatar */}
+                        <span
+                            className={cn(
+                                "shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-display text-sm font-bold border-2",
+                                isActive
+                                    ? "bg-marigold text-forest border-forest"
+                                    : "bg-card text-forest border-forest/30",
+                            )}
+                            aria-hidden="true"
+                        >
+                            {cv.fullName.charAt(0).toUpperCase()}
+                        </span>
+
+                        {!isCollapsed && (
+                            <span className={cn("flex-1 min-w-0", actionRoom, menuOpen && "lg:pr-16")}>
+                                <span className={cn("block text-sm font-bold truncate", isActive ? "text-primary" : "text-foreground")}>
+                                    {title}
+                                </span>
+                                <span className="block text-[10px] text-muted-foreground truncate">{cv.email}</span>
+                            </span>
+                        )}
+                    </button>
+                </Tooltip>
+
+                {/* Pin + three-dot menu: always visible on touch screens, on hover for desktop */}
+                {!isCollapsed && (
+                    <div
+                        className={cn(
+                            "absolute right-1.5 top-1/2 -translate-y-1/2 flex lg:hidden lg:group-hover:flex lg:group-focus-within:flex items-center gap-0.5",
+                            menuOpen && "lg:flex",
+                        )}
+                    >
+                        {!cv.isArchived && (
+                            <Tooltip label={cv.isPinned ? s.unpin : s.pin}>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleTogglePin(cv);
+                                    }}
+                                    className="p-1.5 rounded-full hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
+                                    aria-label={`${cv.isPinned ? s.unpin : s.pin}: ${title}`}
+                                    aria-pressed={!!cv.isPinned}
+                                >
+                                    <Pin className={cn("w-4 h-4", cv.isPinned && "fill-current text-foreground")} />
+                                </button>
+                            </Tooltip>
+                        )}
+                        <div className="relative">
+                            <Tooltip label={s.moreOptions} disabled={menuOpen}>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenDropdown(menuOpen ? null : cv.email);
+                                    }}
+                                    className="p-1.5 rounded-full hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
+                                    aria-label={`${s.moreOptions}: ${title}`}
+                                    aria-expanded={menuOpen}
+                                >
+                                    <MoreVertical className="w-4 h-4" />
+                                </button>
+                            </Tooltip>
+                            {menuOpen && renderMenu(cv)}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     const sidebarContent = (
         <div className="flex flex-col h-full">
             {/* Logo */}
             <div className={cn("border-b border-forest/15", isCollapsed ? "py-4" : "p-4")}>
                 <div className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-between")}>
-                    <button
-                        type="button"
-                        className={cn(
-                            "group flex items-center gap-2.5 cursor-pointer relative text-left",
-                            isCollapsed && "justify-center w-9 h-9",
-                        )}
-                        onClick={() => {
-                            if (isCollapsed) {
-                                onToggleSidebar?.();
-                            } else {
-                                navigate("/");
-                            }
-                        }}
-                        title={isCollapsed ? s.expand : s.goHome}
-                        aria-label={isCollapsed ? s.expand : `${t.common.brand} — ${s.goHome}`}
+                    <Tooltip
+                        label={isCollapsed ? s.expand : s.goHome}
+                        shortcut={isCollapsed ? SHORTCUTS.toggleSidebar : SHORTCUTS.home}
+                        side={tipSide}
+                        align={isCollapsed ? "center" : "start"}
                     >
-                        <span className="w-9 h-9 flex items-center justify-center shrink-0 relative">
-                            <LogoMark
-                                className={cn(
-                                    "w-9 h-9 transition-opacity",
-                                    isCollapsed && "group-hover:opacity-0",
-                                )}
-                            />
-                            {isCollapsed && (
-                                <span className="absolute inset-0 rounded-[10px] bg-forest flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
-                                    <SidebarIcon open={false} className="w-5 h-5 text-cream" />
-                                </span>
-                            )}
-                        </span>
-                        {!isCollapsed && <Wordmark className="text-[13px]" />}
-                    </button>
-                    {/* Hide button - desktop only */}
-                    {!isCollapsed && (
                         <button
-                            onClick={() => onToggleSidebar?.()}
-                            aria-label={s.collapse}
-                            title={s.collapse}
-                            className={cn(toggleButton, "hidden lg:flex")}
+                            type="button"
+                            className={cn(
+                                "group flex items-center gap-2.5 cursor-pointer relative text-left rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marigold",
+                                isCollapsed && "justify-center w-9 h-9",
+                            )}
+                            onClick={() => {
+                                if (isCollapsed) {
+                                    onToggleSidebar?.();
+                                } else {
+                                    navigate("/");
+                                }
+                            }}
+                            aria-label={isCollapsed ? s.expand : `${t.common.brand} — ${s.goHome}`}
                         >
-                            <SidebarIcon open className="w-5 h-5" />
+                            <span className="w-9 h-9 flex items-center justify-center shrink-0 relative">
+                                <LogoMark
+                                    className={cn(
+                                        "w-9 h-9 transition-opacity",
+                                        isCollapsed && "group-hover:opacity-0 group-focus-visible:opacity-0",
+                                    )}
+                                />
+                                {isCollapsed && (
+                                    <span className="absolute inset-0 rounded-[10px] bg-forest flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
+                                        <SidebarIcon open={false} className="w-5 h-5 text-cream" />
+                                    </span>
+                                )}
+                            </span>
+                            {!isCollapsed && <Wordmark className="text-[13px]" />}
                         </button>
-                    )}
-                    {/* Close button - mobile only */}
-                    <button
-                        onClick={() => setIsMobileOpen(false)}
-                        aria-label={s.closeMenu}
-                        title={s.closeMenu}
-                        className={cn(toggleButton, "flex lg:hidden")}
-                    >
-                        <SidebarIcon open className="w-5 h-5" />
-                    </button>
+                    </Tooltip>
+                    <div className="flex items-center gap-0.5">
+                        {!isCollapsed && (
+                            <Tooltip label={s.search} shortcut={SHORTCUTS.search}>
+                                <button onClick={() => setPaletteOpen(true)} aria-label={s.search} className={cn(toggleButton, "flex")}>
+                                    <Search className="w-[18px] h-[18px]" />
+                                </button>
+                            </Tooltip>
+                        )}
+                        {/* Hide button - desktop only */}
+                        {!isCollapsed && (
+                            <Tooltip label={s.collapse} shortcut={SHORTCUTS.toggleSidebar}>
+                                <button
+                                    onClick={() => onToggleSidebar?.()}
+                                    aria-label={s.collapse}
+                                    className={cn(toggleButton, "hidden lg:flex")}
+                                >
+                                    <SidebarIcon open className="w-5 h-5" />
+                                </button>
+                            </Tooltip>
+                        )}
+                        {/* Close button - mobile only */}
+                        <Tooltip label={s.closeMenu} shortcut={SHORTCUTS.toggleSidebar}>
+                            <button
+                                onClick={() => setIsMobileOpen(false)}
+                                aria-label={s.closeMenu}
+                                className={cn(toggleButton, "flex lg:hidden")}
+                            >
+                                <SidebarIcon open className="w-5 h-5" />
+                            </button>
+                        </Tooltip>
+                    </div>
                 </div>
             </div>
 
-            {/* New CV + Import buttons */}
+            {/* New CV + Import (+ Search on the narrow rail) */}
             <div className={cn("p-3 flex gap-2", isCollapsed && "flex-col")}>
-                <Button
-                    size={isCollapsed ? "icon" : "sm"}
-                    className={cn("flex-1", isCollapsed && "w-8 h-8 flex-none")}
-                    onClick={handleNewCV}
-                    aria-label={s.newCV}
-                >
-                    <Plus className="w-4 h-4" aria-hidden="true" />
-                    {!isCollapsed && <span className="ml-1">{s.newCV}</span>}
-                </Button>
-                <Button
-                    variant="outline"
-                    size={isCollapsed ? "icon" : "sm"}
-                    className={cn(isCollapsed && "w-8 h-8")}
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={importing}
-                    title={s.importTitle}
-                    aria-label={s.importTitle}
-                >
-                    {importing ? (
-                        <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" />
-                    ) : (
-                        <Upload className="w-4 h-4" aria-hidden="true" />
-                    )}
-                    {!isCollapsed && <span>{importing ? s.importing : s.import}</span>}
-                </Button>
+                <Tooltip label={s.newCV} shortcut={SHORTCUTS.newCV} side={tipSide}>
+                    <Button
+                        size={isCollapsed ? "icon" : "sm"}
+                        className={cn("flex-1", isCollapsed && "w-8 h-8 flex-none")}
+                        onClick={handleNewCV}
+                        aria-label={s.newCV}
+                    >
+                        <Plus className="w-4 h-4" aria-hidden="true" />
+                        {!isCollapsed && <span className="ml-1">{s.newCV}</span>}
+                    </Button>
+                </Tooltip>
+                <Tooltip label={s.importTitle} shortcut={SHORTCUTS.importCV} side={tipSide}>
+                    <Button
+                        variant="outline"
+                        size={isCollapsed ? "icon" : "sm"}
+                        className={cn(isCollapsed && "w-8 h-8")}
+                        onClick={pickImportFile}
+                        disabled={importing}
+                        aria-label={s.importTitle}
+                    >
+                        {importing ? (
+                            <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                            <Upload className="w-4 h-4" aria-hidden="true" />
+                        )}
+                        {!isCollapsed && <span>{importing ? s.importing : s.import}</span>}
+                    </Button>
+                </Tooltip>
+                {isCollapsed && (
+                    <Tooltip label={s.search} shortcut={SHORTCUTS.search} side="right">
+                        <Button variant="outline" size="icon" className="w-8 h-8" onClick={() => setPaletteOpen(true)} aria-label={s.search}>
+                            <Search className="w-4 h-4" aria-hidden="true" />
+                        </Button>
+                    </Tooltip>
+                )}
             </div>
 
             {/* Tabs: Active / Archived */}
@@ -422,74 +722,15 @@ export default function Sidebar({
                         </p>
                     </div>
                 )}
-                {displayCvs.map((cv) => {
-                    const isActive =
-                        currentEmail === cv.email &&
-                        location.pathname === "/create";
-                    return (
-                        <div
-                            key={cv.email}
-                            className={cn(
-                                "group relative rounded-2xl transition-all duration-150 cursor-pointer",
-                                isActive
-                                    ? "bg-secondary border-2 border-forest"
-                                    : "hover:bg-secondary/60 border-2 border-transparent",
-                            )}
-                        >
-                            <div
-                                className={cn(
-                                    "flex items-center gap-2.5 p-2.5",
-                                    isCollapsed && "justify-center p-2",
-                                )}
-                                onClick={() => handleSelect(cv.email)}
-                                title={isCollapsed ? cv.fullName : undefined}
-                            >
-                                {/* Avatar */}
-                                <div
-                                    className={cn(
-                                        "shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-display text-sm font-bold border-2",
-                                        isActive
-                                            ? "bg-marigold text-forest border-forest"
-                                            : "bg-card text-forest border-forest/30",
-                                    )}
-                                    aria-hidden="true"
-                                >
-                                    {cv.fullName.charAt(0).toUpperCase()}
-                                </div>
-
-                                {!isCollapsed && (
-                                    <div className="flex-1 min-w-0 pr-6">
-                                        <p className={cn("text-sm font-bold truncate", isActive ? "text-primary" : "text-foreground")}>
-                                            {cv.fullName}
-                                        </p>
-                                        <p className="text-[10px] text-muted-foreground truncate">{cv.email}</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Three-dot menu: always visible on touch screens, on hover for desktop */}
-                            {!isCollapsed && (
-                                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex lg:hidden lg:group-hover:flex lg:group-focus-within:flex items-center">
-                                    <div className="relative">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setOpenDropdown(openDropdown === cv.email ? null : cv.email);
-                                            }}
-                                            className="p-1.5 rounded-full hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
-                                            title={s.moreOptions}
-                                            aria-label={`${s.moreOptions}: ${cv.fullName}`}
-                                            aria-expanded={openDropdown === cv.email}
-                                        >
-                                            <MoreVertical className="w-4 h-4" />
-                                        </button>
-                                        {openDropdown === cv.email && renderMenu(cv)}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                {sectioned && sectionLabel(s.pinnedSection)}
+                {pinnedCvs.map(renderItem)}
+                {sectioned &&
+                    (isCollapsed ? (
+                        <div className="mx-2 my-1.5 h-px bg-forest/15" role="separator" />
+                    ) : (
+                        sectionLabel(s.deviceSection)
+                    ))}
+                {otherCvs.map(renderItem)}
             </div>
         </div>
     );
@@ -504,11 +745,28 @@ export default function Sidebar({
                 onChange={handleImportFile}
             />
 
+            <SearchPalette
+                open={paletteOpen}
+                onOpenChange={setPaletteOpen}
+                active={cvs}
+                archived={archivedCvs}
+                currentEmail={currentEmail}
+                actions={paletteActions}
+                onOpen={(cv) => handleSelect(cv.email)}
+                onOpenNewTab={openInNewTab}
+                onPreview={openPreview}
+                onRename={setRenameTarget}
+                onDelete={setDeleteTarget}
+                onTogglePin={handleTogglePin}
+            />
+
+            {renameTarget && <RenameModal cv={renameTarget} onSave={handleRename} onClose={() => setRenameTarget(null)} />}
+
             {deleteTarget && (
                 <Modal title={s.deleteTitle} onClose={() => setDeleteTarget(null)}>
                     <p className="text-sm text-muted-foreground mb-6">
                         {rich(s.deleteBody, {
-                            name: <span className="font-bold text-foreground">{deleteTarget.fullName}</span>,
+                            name: <span className="font-bold text-foreground">{cvTitle(deleteTarget)}</span>,
                         })}
                     </p>
                     <div className="flex gap-3 justify-end">
@@ -562,14 +820,15 @@ export default function Sidebar({
             )}
 
             {/* Mobile hamburger */}
-            <button
-                onClick={() => setIsMobileOpen(true)}
-                aria-label={s.openMenu}
-                title={s.openMenu}
-                className="fixed top-3 left-3 z-[60] lg:hidden w-9 h-9 rounded-full bg-card border-2 border-forest flex items-center justify-center text-foreground hover:bg-muted/50 transition-colors"
-            >
-                <SidebarIcon open={false} className="w-[18px] h-[18px]" />
-            </button>
+            <Tooltip label={s.openMenu} shortcut={SHORTCUTS.toggleSidebar}>
+                <button
+                    onClick={() => setIsMobileOpen(true)}
+                    aria-label={s.openMenu}
+                    className="fixed top-3 left-3 z-[60] lg:hidden w-9 h-9 rounded-full bg-card border-2 border-forest flex items-center justify-center text-foreground hover:bg-muted/50 transition-colors"
+                >
+                    <SidebarIcon open={false} className="w-[18px] h-[18px]" />
+                </button>
+            </Tooltip>
 
             {/* Mobile overlay */}
             {isMobileOpen && (

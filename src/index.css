@@ -90,6 +90,23 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+/* Tooltip and search palette pop from their anchor */
+@keyframes tooltip-in {
+  from { opacity: 0; transform: translateY(2px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.tooltip {
+  transform-origin: var(--radix-tooltip-content-transform-origin);
+  animation: tooltip-in 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes palette-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.palette[data-state='open'] {
+  animation: palette-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @keyframes hub-glow {
   0%, 100% { transform: scale(0.9); opacity: 0.55; }
   50% { transform: scale(1.15); opacity: 0.9; }

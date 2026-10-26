@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { MascotAvatar, type Who } from "@/components/Mascot";
 import { useI18n } from "@/lib/i18n";
 import { cn, prefersReducedMotion } from "@/lib/utils";
+import { Tooltip } from "@/components/ui/tooltip";
 
 // Seats around the machine, as % of the stage (x from left, y from bottom).
 const SEATS: { who: Who; x: number; y: number; align: "start" | "center" | "end" }[] = [
@@ -118,15 +119,16 @@ export default function PantryScene() {
             />
 
             <div className="relative mx-auto max-w-[980px] h-[330px] sm:h-[430px]">
-                <button
-                    type="button"
-                    onClick={brew}
-                    aria-label={s.brew}
-                    title={s.brew}
-                    className="absolute left-1/2 -translate-x-1/2 bottom-0 w-[clamp(104px,15vw,170px)] cursor-pointer rounded-2xl transition-transform hover:-translate-y-1 active:translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marigold"
-                >
-                    <CoffeeMachine brewing={brewing} />
-                </button>
+                <Tooltip label={s.brew} side="top">
+                    <button
+                        type="button"
+                        onClick={brew}
+                        aria-label={s.brew}
+                        className="absolute left-1/2 -translate-x-1/2 bottom-0 w-[clamp(104px,15vw,170px)] cursor-pointer rounded-2xl transition-transform hover:-translate-y-1 active:translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-marigold"
+                    >
+                        <CoffeeMachine brewing={brewing} />
+                    </button>
+                </Tooltip>
 
                 {SEATS.map((seat) => {
                     const talking = seat.who === speaker;
