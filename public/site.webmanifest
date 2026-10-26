@@ -4,7 +4,7 @@
   "description": "Buat CV ramah ATS untuk Backend Developer. Semua data tetap di browser kamu.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f2ee98",
+  "background_color": "#f5f4ec",
   "theme_color": "#10380b",
   "icons": [
     {
@@ -16,6 +16,12 @@
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/favicon.svg",

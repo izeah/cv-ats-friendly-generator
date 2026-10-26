@@ -32,7 +32,8 @@ import {
 import { generateSlug, cn } from "@/lib/utils";
 import { fill, rich, useI18n } from "@/lib/i18n";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogoMark, Wordmark, SmallCactus } from "@/components/Illustrations";
+import { LogoMark, Wordmark } from "@/components/Illustrations";
+import { Mascot } from "@/components/Mascot";
 
 interface SidebarProps {
     currentEmail?: string;
@@ -55,9 +56,9 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
                     role="dialog"
                     aria-modal="true"
                     aria-label={title}
-                    className="bg-card border border-foreground rounded-card shadow-stamp max-w-sm w-full animate-scale-in pointer-events-auto p-8"
+                    className="bg-card border-2 border-forest rounded-card shadow-stamp max-w-sm w-full animate-scale-in pointer-events-auto p-8"
                 >
-                    <h2 className="font-display text-3xl font-bold uppercase leading-none text-foreground mb-3">{title}</h2>
+                    <h2 className="h-display text-3xl text-foreground mb-3">{title}</h2>
                     {children}
                 </div>
             </div>
@@ -194,7 +195,7 @@ export default function Sidebar({
     const displayCvs = showArchived ? archivedCvs : cvs;
 
     const renderMenu = (cv: CVData) => (
-        <div className="absolute right-0 mt-1 w-44 bg-card border border-foreground rounded-2xl shadow-stamp z-50 overflow-hidden animate-fade-in">
+        <div className="absolute right-0 mt-1 w-44 bg-card border-2 border-forest rounded-2xl shadow-stamp z-50 overflow-hidden animate-fade-in">
             <button
                 className={cn(menuItem, "text-foreground")}
                 onClick={(e) => {
@@ -393,7 +394,7 @@ export default function Sidebar({
                                 <Archive className="w-5 h-5" strokeWidth={1.75} />
                             </span>
                         ) : (
-                            <SmallCactus className="w-14 mx-auto mb-3 text-forest origin-bottom animate-sway" />
+                            <Mascot who="arya" pose="idle" className="w-24 mx-auto mb-3" />
                         )}
                         <p className="text-sm font-bold">{showArchived ? s.emptyArchived : s.emptyActive}</p>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -411,8 +412,8 @@ export default function Sidebar({
                             className={cn(
                                 "group relative rounded-2xl transition-all duration-150 cursor-pointer",
                                 isActive
-                                    ? "bg-secondary border border-foreground"
-                                    : "hover:bg-secondary/60 border border-transparent",
+                                    ? "bg-secondary border-2 border-forest"
+                                    : "hover:bg-secondary/60 border-2 border-transparent",
                             )}
                         >
                             <div
@@ -426,9 +427,9 @@ export default function Sidebar({
                                 {/* Avatar */}
                                 <div
                                     className={cn(
-                                        "shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-display text-sm font-bold border",
+                                        "shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-display text-sm font-bold border-2",
                                         isActive
-                                            ? "bg-marigold text-forest border-foreground"
+                                            ? "bg-marigold text-forest border-forest"
                                             : "bg-card text-forest border-forest/30",
                                     )}
                                     aria-hidden="true"
@@ -544,7 +545,7 @@ export default function Sidebar({
             <button
                 onClick={() => setIsMobileOpen(true)}
                 aria-label={s.openMenu}
-                className="fixed top-3 left-3 z-[60] lg:hidden w-9 h-9 rounded-full bg-card border border-foreground flex items-center justify-center text-foreground hover:bg-muted/50 transition-colors"
+                className="fixed top-3 left-3 z-[60] lg:hidden w-9 h-9 rounded-full bg-card border-2 border-forest flex items-center justify-center text-foreground hover:bg-muted/50 transition-colors"
             >
                 <Menu className="w-4 h-4" />
             </button>

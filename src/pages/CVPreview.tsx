@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   Mail, Phone, MapPin, ArrowLeft, ArrowRight, Download, Share2,
-  Briefcase, Code2, FolderKanban, Calendar, CheckCircle2, LoaderCircle, CircleAlert, FilePlus2,
+  Briefcase, Code2, FolderKanban, Calendar, CheckCircle2, LoaderCircle, CircleAlert,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cvShareUrl, decodeCVShare, getCVBySlug, type CVData } from '@/lib/db'
 import { formatDate } from '@/lib/utils'
 import { useI18n, usePageMeta } from '@/lib/i18n'
-import { SmallCactus, Tumbleweed } from '@/components/Illustrations'
+import { Mascot, MascotAvatar } from '@/components/Mascot'
 import { BrandLink } from '@/components/SiteChrome'
 import { LanguageSwitcher } from '@/components/Language'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -138,7 +138,7 @@ export default function CVPreview() {
       <div className="min-h-screen bg-background" aria-busy="true" aria-label={p.loading}>
         {header}
         <div className="max-w-[850px] mx-auto px-4 py-8 sm:py-12">
-          <div className="rounded-card border border-forest/20 bg-card p-6 sm:p-10 space-y-9">
+          <div className="rounded-card border-2 border-forest/15 bg-card p-6 sm:p-10 space-y-9">
             <div className="space-y-3">
               <Skeleton className="h-11 w-2/3 rounded-2xl" />
               <Skeleton className="h-4 w-1/3" />
@@ -167,14 +167,11 @@ export default function CVPreview() {
         {header}
         <div className="flex-1 flex items-center justify-center px-5 py-16">
           <div className="text-center animate-fade-in space-y-4">
-            <div className="relative w-48 h-28 mx-auto">
-              <SmallCactus className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 text-forest origin-bottom animate-sway" />
-              <Tumbleweed className="absolute bottom-0 left-1/2 w-9 text-forest animate-roll" />
-            </div>
-            <h1 className="font-display text-5xl font-bold uppercase tracking-[-0.03em] leading-none">
+            <Mascot who={shared ? 'dimas' : 'arya'} pose="think" className="w-40 mx-auto" />
+            <h1 className="h-display text-4xl sm:text-5xl">
               {shared ? p.brokenTitle : p.notFoundTitle}
             </h1>
-            <p className="text-muted-foreground max-w-sm">{shared ? p.brokenBody : p.notFoundBody}</p>
+            <p className="text-muted-foreground max-w-sm mx-auto">{shared ? p.brokenBody : p.notFoundBody}</p>
             {shared ? (
               <Button variant="marigold" onClick={() => navigate('/')}>
                 {p.buildOwn} <ArrowRight className="w-4 h-4" />
@@ -200,9 +197,10 @@ export default function CVPreview() {
       <div className="max-w-[850px] mx-auto px-4 py-6 sm:py-10 relative z-10">
         {/* Above-the-fold CTA for people opening someone else's CV */}
         {shared && (
-          <div className="no-print mb-6 flex flex-col sm:flex-row sm:items-center gap-4 rounded-card bg-forest text-cream px-6 py-5">
+          <div className="no-print mb-8 flex flex-col sm:flex-row sm:items-center gap-4 rounded-card bg-forest text-cream border-2 border-forest-deep shadow-stamp-marigold px-5 py-5 sm:px-6">
+            <MascotAvatar who="rina" className="w-14 hidden sm:block" />
             <div className="flex-1">
-              <p className="font-display text-2xl font-bold uppercase tracking-[-0.02em] leading-none">{p.sharedBannerTitle}</p>
+              <p className="h-display text-2xl">{p.sharedBannerTitle}</p>
               <p className="text-sm text-cream/80 mt-1.5">{p.sharedBannerText}</p>
             </div>
             <Button variant="marigold" onClick={() => navigate('/create')} className="self-start sm:self-auto">
@@ -218,11 +216,11 @@ export default function CVPreview() {
         )}
 
         {/* CV Document — clean paper card */}
-        <article className="rounded-card border border-foreground overflow-hidden bg-card shadow-stamp" lang={lang}>
+        <article className="rounded-card border-2 border-forest overflow-hidden bg-card shadow-stamp" lang={lang}>
 
           {/* ===== CV Header ===== */}
           <div className="px-6 sm:px-10 pt-8 sm:pt-10 pb-6 border-b border-forest/15">
-            <h1 className="font-display text-4xl sm:text-5xl font-bold uppercase tracking-[-0.03em] leading-none text-foreground mb-2">
+            <h1 className="h-display text-4xl sm:text-5xl text-foreground mb-2">
               {cv.fullName}
             </h1>
             {cv.occupation && (
@@ -249,10 +247,8 @@ export default function CVPreview() {
 
           {!hasContent && (
             <div className="no-print px-6 sm:px-10 py-10 border-b border-forest/15 text-center">
-              <span className="w-14 h-14 mx-auto rounded-full bg-marigold border border-foreground flex items-center justify-center" aria-hidden="true">
-                <FilePlus2 className="w-6 h-6" strokeWidth={1.75} />
-              </span>
-              <p className="mt-4 font-display text-2xl font-bold uppercase tracking-[-0.02em]">{p.emptyTitle}</p>
+              <Mascot who="arya" pose="type" className="w-32 mx-auto" />
+              <p className="mt-4 h-display text-2xl">{p.emptyTitle}</p>
               <p className="text-sm text-muted-foreground mt-1">{p.emptyBody}</p>
               {!shared && (
                 <Button variant="outline" size="sm" onClick={handleEdit} className="mt-5">

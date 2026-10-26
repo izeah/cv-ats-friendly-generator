@@ -19,14 +19,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 }
 
 /** EN | ID toggle shown on every page. */
-export function LanguageSwitcher({ className, compact }: { className?: string; compact?: boolean }) {
+export function LanguageSwitcher({ className, compact, dark }: { className?: string; compact?: boolean; dark?: boolean }) {
     const { lang, setLang, t } = useI18n();
     return (
         <div
             role="group"
             aria-label={t.common.language}
             className={cn(
-                "inline-flex items-center gap-0.5 rounded-full border border-foreground bg-card p-0.5 shrink-0",
+                "inline-flex items-center gap-0.5 rounded-full border-2 p-0.5 shrink-0 transition-colors duration-300",
+                dark ? "border-cream/35 bg-transparent text-cream" : "border-forest bg-card text-forest",
                 className,
             )}
         >
@@ -41,8 +42,14 @@ export function LanguageSwitcher({ className, compact }: { className?: string; c
                     aria-label={code === "en" ? "English" : "Bahasa Indonesia"}
                     onClick={() => setLang(code)}
                     className={cn(
-                        "h-7 min-w-8 px-2 rounded-full text-[11px] font-bold uppercase transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest",
-                        lang === code ? "bg-forest text-cream" : "text-forest hover:bg-secondary",
+                        "h-7 min-w-8 px-2 rounded-full text-[11px] font-bold uppercase transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marigold",
+                        lang === code
+                            ? dark
+                                ? "bg-marigold text-forest"
+                                : "bg-forest text-cream"
+                            : dark
+                              ? "text-cream hover:bg-cream/10"
+                              : "text-forest hover:bg-secondary",
                     )}
                 >
                     {code}

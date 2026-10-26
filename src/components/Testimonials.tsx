@@ -6,6 +6,7 @@ import { cn, prefersReducedMotion } from "@/lib/utils";
 import { fill, useI18n } from "@/lib/i18n";
 import { useInView } from "@/lib/useInView";
 import { LogoMark } from "@/components/Illustrations";
+import { SectionHead, Hl } from "@/components/Section";
 
 const springy = "cubic-bezier(0.34, 1.56, 0.64, 1)";
 
@@ -94,19 +95,20 @@ export default function Testimonials() {
     const progress = (shown + (stamped ? 1 : 0)) / (total + 1);
 
     return (
-        <div ref={ref} className="grid lg:grid-cols-[1fr_1.15fr] gap-12 lg:gap-16 items-start">
+        <div ref={ref} className="grid lg:grid-cols-[1fr_1.15fr] gap-10 lg:gap-16 items-start">
             <div className="min-w-0">
-                <h2 className="font-display font-bold uppercase text-5xl sm:text-6xl leading-[0.9] tracking-[-0.03em]">
-                    {tm.titleA}
-                    <br />
-                    {tm.titleB}
-                </h2>
-                <p className="mt-5 text-lg text-muted-foreground leading-relaxed max-w-md">{tm.lead}</p>
+                <SectionHead
+                    stacked
+                    kicker={tm.kicker}
+                    title={<>{tm.titleA} <Hl>{tm.titleHl}</Hl></>}
+                    lead={tm.lead}
+                    className="mb-0"
+                />
 
                 <ul
                     ref={listRef}
                     onScroll={onListScroll}
-                    className="mt-8 flex lg:flex-col gap-3 overflow-x-auto pb-2 -mx-5 px-5 sm:-mx-10 sm:px-10 lg:mx-0 lg:px-0 lg:overflow-visible"
+                    className="mt-9 flex lg:flex-col gap-3 overflow-x-auto pb-2 lg:pb-0 -mx-5 px-5 sm:-mx-10 sm:px-10 lg:mx-0 lg:px-0 lg:overflow-visible"
                 >
                     {tm.items.map((person, i) => {
                         const active = i === idx;
@@ -118,14 +120,14 @@ export default function Testimonials() {
                                     aria-pressed={active}
                                     aria-label={fill(tm.pick, { name: person.name })}
                                     className={cn(
-                                        "relative overflow-hidden w-60 lg:w-full flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition-colors cursor-pointer",
-                                        active ? "bg-forest text-cream border-forest" : "bg-card border-forest/25 hover:bg-secondary",
+                                        "relative overflow-hidden w-60 lg:w-full flex items-center gap-3 rounded-2xl border-2 px-3 py-2.5 text-left transition-colors cursor-pointer",
+                                        active ? "bg-forest text-cream border-forest" : "bg-card border-forest/20 hover:border-forest/50",
                                     )}
                                 >
                                     <span
                                         className={cn(
-                                            "w-10 h-10 rounded-full border flex items-center justify-center font-display font-bold shrink-0",
-                                            active ? "bg-marigold text-forest border-marigold" : "bg-sage border-forest/30",
+                                            "w-10 h-10 rounded-full border-2 flex items-center justify-center font-display font-bold shrink-0",
+                                            active ? "bg-marigold text-forest border-marigold" : "bg-sage border-forest/25",
                                         )}
                                         aria-hidden="true"
                                     >
@@ -151,12 +153,13 @@ export default function Testimonials() {
                 </ul>
             </div>
 
-            <div className="relative pb-6 min-w-0">
-                <div className="relative rounded-card border border-foreground bg-card shadow-stamp p-5 sm:p-7">
+            {/* Sticks while the list scrolls, and comes to rest level with the last person in it */}
+            <div className="relative min-w-0 lg:sticky lg:top-24">
+                <div className="relative rounded-card border-2 border-forest bg-card shadow-stamp p-5 sm:p-7">
                     <div className="flex items-center gap-3 pb-4 mb-5 border-b border-forest/15">
                         <span
                             key={`avatar-${idx}`}
-                            className="animate-pop-in w-11 h-11 rounded-full bg-sage border border-forest/40 flex items-center justify-center font-display text-lg font-bold shrink-0"
+                            className="animate-pop-in w-11 h-11 rounded-full bg-sage border-2 border-forest/40 flex items-center justify-center font-display text-lg font-bold shrink-0"
                             aria-hidden="true"
                         >
                             {story.initials}
@@ -178,7 +181,7 @@ export default function Testimonials() {
                             return (
                                 <div key={`${idx}-${i}`} className={cn("animate-pop-in flex items-end gap-2", ours && "flex-row-reverse")}>
                                     {ours ? (
-                                        <LogoMark className="w-8 h-8" />
+                                        <LogoMark small className="w-8 h-8" />
                                     ) : (
                                         <span
                                             className="w-8 h-8 rounded-full bg-sage border border-forest/40 flex items-center justify-center text-[11px] font-bold shrink-0"
@@ -211,7 +214,7 @@ export default function Testimonials() {
                         {typing && next && (
                             <div className={cn("animate-pop-in flex items-end gap-2", next.from === "us" && "flex-row-reverse")} aria-hidden="true">
                                 {next.from === "us" ? (
-                                    <LogoMark className="w-8 h-8" />
+                                    <LogoMark small className="w-8 h-8" />
                                 ) : (
                                     <span className="w-8 h-8 rounded-full bg-sage border border-forest/40 flex items-center justify-center text-[11px] font-bold shrink-0">
                                         {story.initials}
@@ -234,7 +237,7 @@ export default function Testimonials() {
 
                 {/* Outcome stamp lands on the card once the thread is done */}
                 <div
-                    className="absolute bottom-0 left-6 sm:left-auto sm:right-8 flex items-center gap-2 rounded-full bg-marigold border-2 border-forest px-4 py-2 text-sm font-bold transition-all duration-500"
+                    className="absolute -bottom-5 left-6 sm:left-auto sm:right-8 flex items-center gap-2 rounded-full bg-marigold border-2 border-forest px-4 py-2 text-sm font-bold transition-all duration-500"
                     style={{
                         opacity: stamped && !leaving ? 1 : 0,
                         transform: stamped && !leaving ? "scale(1) rotate(-4deg)" : "scale(1.7) rotate(-18deg)",

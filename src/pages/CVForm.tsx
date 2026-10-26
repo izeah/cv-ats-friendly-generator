@@ -38,6 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import Sidebar from "@/components/Sidebar";
+import TeamTip from "@/components/TeamTip";
 import { LanguageSwitcher } from "@/components/Language";
 import {
     saveCVData,
@@ -55,7 +56,7 @@ const YEARS = Array.from({ length: 30 }, (_, i) =>
 );
 
 const SELECT_CLASS =
-    "h-11 w-full rounded-full border border-foreground/35 bg-input px-3 py-2 text-sm font-medium text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-foreground/25 focus:border-foreground cursor-pointer aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-destructive/20";
+    "h-11 w-full rounded-xl border-[1.5px] border-forest/30 bg-input px-3 py-2 text-sm font-medium text-foreground transition-[border-color,box-shadow] duration-200 hover:border-forest/60 focus:outline-none focus:border-forest focus:ring-4 focus:ring-marigold/50 cursor-pointer aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-4 aria-[invalid=true]:ring-destructive/15";
 
 const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
@@ -252,7 +253,7 @@ function ProjectForm({
     };
 
     return (
-        <div className="relative border border-forest/30 rounded-3xl bg-background/50 overflow-hidden animate-scale-in">
+        <div className="relative border-2 border-forest/15 rounded-2xl bg-background/60 overflow-hidden animate-scale-in">
             <div
                 className="flex items-center justify-between p-4 cursor-pointer hover:bg-secondary/50 transition-colors"
                 onClick={() => setIsCollapsed(!isCollapsed)}
@@ -428,11 +429,11 @@ function ExperienceForm({
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-marigold flex items-center justify-center border border-foreground shrink-0" aria-hidden="true">
+                    <div className="w-10 h-10 rounded-full bg-marigold flex items-center justify-center border-2 border-forest shrink-0" aria-hidden="true">
                         <Briefcase className="w-4 h-4" strokeWidth={1.75} />
                     </div>
                     <div className="min-w-0">
-                        <span className="font-display text-xl font-bold uppercase tracking-[-0.02em] leading-tight text-foreground truncate block">
+                        <span className="h-display text-xl leading-tight text-foreground truncate block">
                             {experience.company || fill(f.experienceUntitled, { n: expIndex + 1 })}
                         </span>
                         <p className="text-xs text-muted-foreground">
@@ -539,7 +540,7 @@ function FormSkeleton({ label }: { label: string }) {
     return (
         <div className="space-y-6" aria-busy="true" aria-label={label}>
             {[5, 1, 3].map((fields, i) => (
-                <div key={i} className="rounded-card border border-forest/20 bg-card p-7 space-y-5">
+                <div key={i} className="rounded-card border-2 border-forest/15 bg-card p-7 space-y-5">
                     <div className="flex items-center gap-3">
                         <Skeleton className="w-10 h-10 shrink-0" />
                         <Skeleton className="h-6 w-48 rounded-xl" />
@@ -560,7 +561,7 @@ function FormSkeleton({ label }: { label: string }) {
 
 function SectionIcon({ icon: Icon }: { icon: typeof User }) {
     return (
-        <span className="w-10 h-10 rounded-full bg-marigold border border-foreground flex items-center justify-center shrink-0" aria-hidden="true">
+        <span className="w-10 h-10 rounded-full bg-marigold border-2 border-forest flex items-center justify-center shrink-0" aria-hidden="true">
             <Icon className="w-4 h-4" strokeWidth={1.75} />
         </span>
     );
@@ -807,11 +808,11 @@ export default function CVForm() {
 
             <div className="flex-1 min-w-0">
                 {/* Header */}
-                <header className="sticky top-0 z-50 glass border-b border-forest/15">
+                <header className="sticky top-0 z-50 glass border-b border-forest/10">
                     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">
                             <div className="pl-12 lg:pl-0 min-w-0">
-                                <h1 className="font-display text-xl font-bold uppercase leading-none">
+                                <h1 className="h-display text-xl">
                                     {email || loadingCV ? f.editCV : f.newCV}
                                 </h1>
                                 {email && (
@@ -853,11 +854,13 @@ export default function CVForm() {
                     {loadingCV && <FormSkeleton label={f.loading} />}
                     <div className={loadingCV ? "hidden" : "space-y-6"}>
                         {(saveError || (submitted && errorCount > 0)) && (
-                            <div role="alert" className="flex items-start gap-3 rounded-3xl border border-destructive bg-destructive/10 px-5 py-4 text-sm font-bold text-destructive">
+                            <div role="alert" className="flex items-start gap-3 rounded-2xl border-2 border-destructive bg-destructive/10 px-5 py-4 text-sm font-bold text-destructive">
                                 <CircleAlert className="w-5 h-5 shrink-0" aria-hidden="true" />
                                 <p>{saveError ? f.errors.saveFailed : fill(f.errors.summary, { n: errorCount })}</p>
                             </div>
                         )}
+
+                        <TeamTip />
 
                         {/* Personal Info */}
                         <Card className="overflow-hidden">
@@ -910,7 +913,7 @@ export default function CVForm() {
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h2 className="font-display text-2xl font-bold uppercase tracking-[-0.03em] leading-none flex items-center gap-3">
+                                    <h2 className="h-display text-2xl flex items-center gap-3">
                                         <SectionIcon icon={Briefcase} />
                                         {f.experienceTitle}
                                     </h2>
