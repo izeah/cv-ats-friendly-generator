@@ -410,7 +410,7 @@ export default function CVPreview() {
         </article>
 
         {/* Mobile Bottom Actions */}
-        <div className="fixed bottom-0 left-0 right-0 glass border-t border-forest/15 p-3 sm:hidden no-print">
+        <div className="fixed bottom-0 left-0 right-0 glass p-3 sm:hidden no-print">
           <div className="flex gap-2 max-w-[850px] mx-auto">
             {!shared && (
               <Button variant="outline" size="default" className="flex-1 px-3" onClick={handleEdit}>

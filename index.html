@@ -10,6 +10,13 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="application-name" content="CV ATS Friendly Builder" />
     <meta name="apple-mobile-web-app-title" content="CV ATS" />
+    <!-- First paint on the landing is the dark hero, not a flash of paper -->
+    <script>
+      if (location.pathname === '/') document.documentElement.dataset.page = 'landing'
+    </script>
+    <style>
+      html[data-page='landing'] { background-color: #10380b; }
+    </style>
     <!-- route-meta -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

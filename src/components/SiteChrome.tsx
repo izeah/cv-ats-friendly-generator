@@ -125,15 +125,15 @@ export function SiteHeader() {
             <header
                 data-theme={theme}
                 className={cn(
-                    "no-print sticky top-0 border-b transition-[background-color,border-color,color] duration-300",
+                    "no-print sticky top-0 transition-[background-color,color] duration-300",
                     open ? "z-[96]" : "z-50",
                     clear
-                        ? "bg-transparent border-transparent text-cream"
+                        ? "bg-transparent text-cream"
                         : dark
-                          ? "bg-forest/90 backdrop-blur-md border-cream/15 text-cream"
+                          ? "bg-forest/90 backdrop-blur-md text-cream"
                           : theme === "accent"
-                            ? "bg-marigold/95 backdrop-blur-md border-forest/20 text-forest"
-                            : "glass border-forest/10 text-forest",
+                            ? "bg-marigold/95 backdrop-blur-md text-forest"
+                            : "glass text-forest",
                 )}
             >
                 <div className="relative max-w-[1240px] mx-auto px-5 sm:px-10 h-16 flex items-center justify-between gap-3">

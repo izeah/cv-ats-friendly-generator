@@ -150,6 +150,11 @@ html {
   scroll-behavior: smooth;
 }
 
+/* The landing opens on the dark hero: keep the canvas forest behind it */
+html[data-page='landing'] {
+  background-color: var(--color-forest);
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
