@@ -860,9 +860,9 @@ export default function CVForm() {
                                     <span className="hidden sm:inline">{f.preview}</span>
                                 </Button>
                             </Tooltip>
-                            {/* Phone mode: New CV + a menu in place of Save / Preview */}
+                            {/* Below lg the sidebar is a closed drawer: New CV + a menu for the open CV */}
                             <CVHeaderMenu
-                                className="desk:hidden"
+                                className="lg:hidden"
                                 email={email.trim().toLowerCase()}
                                 name={fullName.trim()}
                                 savingMode={savingMode}
