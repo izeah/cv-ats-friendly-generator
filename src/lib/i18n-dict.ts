@@ -338,7 +338,11 @@ export const en = {
     deleteBody: 'Are you sure you want to delete {name}? This action cannot be undone.',
     replaceTitle: 'Replace existing CV?',
     replaceBody: 'A CV for {email} already exists. Importing will overwrite it with {name} from the file. This action cannot be undone.',
+    toastSaved: 'Saved {name}',
     toastExported: 'Exported {name}',
+    toastArchived: 'Archived {name}',
+    toastUnarchived: 'Restored {name}',
+    toastDeleted: 'Deleted {name}',
     toastImported: 'Imported {name}',
     toastImportFailed: 'Failed to save the imported CV.',
     importErrors: {
@@ -861,7 +865,11 @@ export const id: Dict = {
     deleteBody: 'Yakin ingin menghapus {name}? Tindakan ini tidak bisa dibatalkan.',
     replaceTitle: 'Timpa CV yang ada?',
     replaceBody: 'CV untuk {email} sudah ada. Impor akan menimpanya dengan {name} dari file. Tindakan ini tidak bisa dibatalkan.',
+    toastSaved: '{name} disimpan',
     toastExported: '{name} diekspor',
+    toastArchived: '{name} diarsipkan',
+    toastUnarchived: '{name} dipulihkan',
+    toastDeleted: '{name} dihapus',
     toastImported: '{name} diimpor',
     toastImportFailed: 'Gagal menyimpan CV yang diimpor.',
     importErrors: {

@@ -172,7 +172,7 @@ export default function Sidebar({
     };
 
     const openInNewTab = (cv: CVData) => {
-        window.open(`/create?email=${encodeURIComponent(cv.email)}`, "_blank", "noopener");
+        Object.assign(document.createElement("a"), { href: `/create?email=${encodeURIComponent(cv.email)}`, target: "_blank", rel: "noopener" }).click();
     };
 
     const openPreview = (cv: CVData) => {

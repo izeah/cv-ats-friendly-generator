@@ -34,8 +34,11 @@ import { cn } from "@/lib/utils";
 interface CVHeaderMenuProps {
     /** Email of the CV in the form; the CV-specific items need it saved first. */
     email: string;
+    /** Full name typed in the form, for the save toast. */
+    name: string;
     savingMode: "save" | "preview" | null;
-    onSave: () => unknown;
+    /** Resolves true once the CV is stored. */
+    onSave: () => Promise<boolean | undefined>;
     onPreview: () => unknown;
     onNewCV: () => void;
     /** Something about the stored CV changed (pin, label, archive): refresh lists. */
@@ -50,6 +53,7 @@ const item =
 
 export default function CVHeaderMenu({
     email,
+    name,
     savingMode,
     onSave,
     onPreview,
@@ -113,8 +117,15 @@ export default function CVHeaderMenu({
         }
     };
 
-    const entries: ({ icon: LucideIcon; label: string; onClick: () => unknown; disabled?: boolean; danger?: boolean; instant?: boolean } | "divider")[] = [
-        { icon: savingMode === "save" ? LoaderCircle : Save, label: f.save, onClick: onSave, disabled: !!savingMode },
+    const entries: ({ icon: LucideIcon; label: string; onClick: () => unknown; disabled?: boolean; danger?: boolean; instant?: boolean; href?: string } | "divider")[] = [
+        {
+            icon: savingMode === "save" ? LoaderCircle : Save,
+            label: f.save,
+            onClick: async () => {
+                if (await onSave()) setToast({ type: "success", message: fill(s.toastSaved, { name: name || email }) });
+            },
+            disabled: !!savingMode,
+        },
         { icon: savingMode === "preview" ? LoaderCircle : Eye, label: f.preview, onClick: onPreview, disabled: !!savingMode },
         "divider",
         {
@@ -131,7 +142,9 @@ export default function CVHeaderMenu({
         {
             icon: ExternalLink,
             label: s.openNewTab,
-            onClick: () => cv && window.open(`/create?email=${encodeURIComponent(cv.email)}`, "_blank", "noopener"),
+            // A real link: phone browsers block window.open with a features string as a popup.
+            href: cv ? `/create?email=${encodeURIComponent(cv.email)}` : undefined,
+            onClick: () => {},
             disabled: !cv,
             instant: true,
         },
@@ -151,6 +164,7 @@ export default function CVHeaderMenu({
             onClick: async () => {
                 if (!cv) return;
                 await toggleArchive(cv.email);
+                setToast({ type: "success", message: fill(cv.isArchived ? s.toastUnarchived : s.toastArchived, { name: cv.fullName }) });
                 onChanged();
             },
             disabled: !cv,
@@ -181,6 +195,18 @@ export default function CVHeaderMenu({
                     {entries.map((entry, i) =>
                         entry === "divider" ? (
                             <div key={i} className="my-1 h-px bg-forest/15" role="separator" />
+                        ) : entry.href ? (
+                            <a
+                                key={entry.label}
+                                href={entry.href}
+                                target="_blank"
+                                rel="noopener"
+                                className={item}
+                                onClick={() => setOpen(false)}
+                            >
+                                <entry.icon className="w-4 h-4 text-primary/70" aria-hidden="true" />
+                                {entry.label}
+                            </a>
                         ) : (
                             <button
                                 key={entry.label}
@@ -224,6 +250,7 @@ export default function CVHeaderMenu({
                     onConfirm={async () => {
                         await deleteCVByEmail(deleteTarget.email);
                         setDeleteTarget(null);
+                        setToast({ type: "success", message: fill(s.toastDeleted, { name: deleteTarget.fullName }) });
                         onChanged();
                         onDeleted();
                     }}

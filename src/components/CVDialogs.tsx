@@ -1,5 +1,6 @@
 // Dialogs and the toast shared by the sidebar and the phone header menu.
 import { useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import * as Dialog from "@radix-ui/react-dialog";
 import { CircleAlert, CircleCheck, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -110,7 +111,8 @@ export function DeleteModal({ cv, onConfirm, onClose }: { cv: CVData; onConfirm:
 
 export function Toast({ toast }: { toast: ToastState }) {
     if (!toast) return null;
-    return (
+    // Portal: a sticky header with backdrop-filter would trap position:fixed at the top.
+    return createPortal(
         <div
             role={toast.type === "error" ? "alert" : "status"}
             className={cn(
@@ -124,6 +126,7 @@ export function Toast({ toast }: { toast: ToastState }) {
                 <CircleAlert className="w-4 h-4 shrink-0" aria-hidden="true" />
             )}
             <span>{toast.message}</span>
-        </div>
+        </div>,
+        document.body,
     );
 }

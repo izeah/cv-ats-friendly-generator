@@ -729,6 +729,7 @@ export default function CVForm() {
                 setJustSaved(true);
                 setTimeout(() => setJustSaved(false), 2000);
             }
+            return true;
         } catch (err) {
             console.error("Save failed:", err);
             setSaveError(true);
@@ -863,6 +864,7 @@ export default function CVForm() {
                             <CVHeaderMenu
                                 className="desk:hidden"
                                 email={email.trim().toLowerCase()}
+                                name={fullName.trim()}
                                 savingMode={savingMode}
                                 onSave={() => handleSave(false)}
                                 onPreview={() => handleSave(true)}
