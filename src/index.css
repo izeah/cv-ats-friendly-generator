@@ -107,6 +107,20 @@
   animation: palette-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Key caps mean nothing without a keyboard: hide them on phones and touch-only
+   screens, and show the touch alternative (.hotkey-alt) where there is one. */
+.hotkey-alt {
+  display: none;
+}
+@media (max-width: 639.98px), (hover: none) {
+  .hotkey {
+    display: none !important;
+  }
+  .hotkey-alt {
+    display: inline-flex;
+  }
+}
+
 @keyframes hub-glow {
   0%, 100% { transform: scale(0.9); opacity: 0.55; }
   50% { transform: scale(1.15); opacity: 0.9; }

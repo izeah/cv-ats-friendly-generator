@@ -984,13 +984,13 @@ export default function CVForm() {
                             </CardContent>
                         </Card>
 
-                        {/* Action Buttons */}
-                        <div className="flex flex-col sm:flex-row gap-3 pb-10">
+                        {/* Action buttons, with room below so the scroll-to-top button never covers them */}
+                        <div className="flex flex-col sm:flex-row gap-3 pb-28 lg:pb-12">
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="lg"
-                                className="flex-1"
+                                className="sm:flex-1 h-auto min-h-12 py-3"
                                 onClick={() => handleSave(false)}
                                 disabled={saving}
                             >
@@ -1000,16 +1000,16 @@ export default function CVForm() {
                                     <Save className="w-4 h-4" aria-hidden="true" />
                                 )}
                                 {savingMode === "save" ? f.saving : justSaved ? f.saved : f.saveDraft}
-                                <ShortcutKeys shortcut={SHORTCUTS.save} className="hidden sm:inline-flex ml-1 opacity-60" />
+                                <ShortcutKeys shortcut={SHORTCUTS.save} className="ml-1 opacity-60" />
                             </Button>
-                            <Button type="button" size="lg" className="flex-1" onClick={() => handleSave(true)} disabled={saving}>
+                            <Button type="button" size="lg" className="sm:flex-1 h-auto min-h-12 py-3" onClick={() => handleSave(true)} disabled={saving}>
                                 {savingMode === "preview" ? (
                                     <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" />
                                 ) : (
                                     <FileCheck className="w-4 h-4" aria-hidden="true" />
                                 )}
                                 {savingMode === "preview" ? f.building : f.previewBuild}
-                                <ShortcutKeys shortcut={SHORTCUTS.savePreview} className="hidden sm:inline-flex ml-1 opacity-70" />
+                                <ShortcutKeys shortcut={SHORTCUTS.savePreview} className="ml-1 opacity-70" />
                             </Button>
                         </div>
                     </div>

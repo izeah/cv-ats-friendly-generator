@@ -6,6 +6,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import {
     Search,
+    X,
     Maximize2,
     Minimize2,
     ExternalLink,
@@ -314,7 +315,7 @@ function PaletteBody({
                     {row.kind === "action" ? row.action.label : cvTitle(row.cv)}
                 </span>
                 {row.kind === "action" ? (
-                    row.action.shortcut && <ShortcutKeys shortcut={row.action.shortcut} className="hidden sm:inline-flex text-cream/60 text-[15px]" />
+                    row.action.shortcut && <ShortcutKeys shortcut={row.action.shortcut} className="text-cream/60 text-[15px]" />
                 ) : cv && isSelected ? (
                     rowActions(cv)
                 ) : cv ? (
@@ -365,6 +366,8 @@ function PaletteBody({
                     aria-keyshortcuts="Escape"
                 >
                     <Kbd className="text-[13px] px-2">{shortcutKeys(SHORTCUTS.close)[0]}</Kbd>
+                    {/* No Esc key on a phone: a plain close icon instead */}
+                    <X className="hotkey-alt w-6 h-6" aria-hidden="true" />
                 </Dialog.Close>
             </div>
             <div className="sm:hidden px-4 pt-3">{tabs}</div>
@@ -435,12 +438,12 @@ function PaletteBody({
                         {expanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </button>
                 </Tooltip>
-                <span className="hidden sm:flex items-center gap-1.5" aria-hidden="true">
+                <span className="hotkey hidden sm:flex items-center gap-1.5" aria-hidden="true">
                     <ShortcutKeys shortcut={SHORTCUTS.up} className="text-sm" />
                     <ShortcutKeys shortcut={SHORTCUTS.down} className="text-sm" />
                     {s.select}
                 </span>
-                <span className="hidden lg:flex items-center gap-1.5" aria-hidden="true">
+                <span className="hotkey hidden lg:flex items-center gap-1.5" aria-hidden="true">
                     <ShortcutKeys shortcut={SHORTCUTS.close} className="text-sm" />
                     {s.close}
                 </span>
@@ -500,7 +503,7 @@ function FooterAction({ label, shortcut, onClick }: { label: string; shortcut: S
             className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 font-bold text-cream/85 hover:text-cream hover:bg-cream/10 cursor-pointer"
         >
             {label}
-            <ShortcutKeys shortcut={shortcut} className="hidden sm:inline-flex text-sm text-cream/60" />
+            <ShortcutKeys shortcut={shortcut} className="text-sm text-cream/60" />
         </button>
     );
 }
