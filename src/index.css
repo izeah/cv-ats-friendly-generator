@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* "Phone mode": a small screen or a touch-only one (no hover, so no keyboard either).
+   desk: is its complement. The .hotkey rule below uses the same split. */
+@custom-variant mobile (@media (max-width: 639.98px), (hover: none));
+@custom-variant desk (@media (min-width: 640px) and (hover: hover));
+
 /* Colors, type, motion and layout follow docs/DESIGN.md: Forest Ink + Marigold
    stickers on warm paper, a dark hero, handwritten kickers and a sticky story.
    Diagram motion and the FAQ structure follow DESIGN-Monad.md. */
@@ -105,6 +110,20 @@
 }
 .palette[data-state='open'] {
   animation: palette-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Key caps mean nothing without a keyboard: hide them on phones and touch-only
+   screens, and show the touch alternative (.hotkey-alt) where there is one. */
+.hotkey-alt {
+  display: none;
+}
+@media (max-width: 639.98px), (hover: none) {
+  .hotkey {
+    display: none !important;
+  }
+  .hotkey-alt {
+    display: inline-flex;
+  }
 }
 
 @keyframes hub-glow {

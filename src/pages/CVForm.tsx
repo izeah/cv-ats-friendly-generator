@@ -38,6 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import Sidebar from "@/components/Sidebar";
+import CVHeaderMenu from "@/components/CVHeaderMenu";
 import TeamTip from "@/components/TeamTip";
 import { LanguageSwitcher } from "@/components/Language";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -728,6 +729,7 @@ export default function CVForm() {
                 setJustSaved(true);
                 setTimeout(() => setJustSaved(false), 2000);
             }
+            return true;
         } catch (err) {
             console.error("Save failed:", err);
             setSaveError(true);
@@ -834,6 +836,7 @@ export default function CVForm() {
                                 <Button
                                     variant="outline"
                                     size="sm"
+                                    className="max-lg:hidden"
                                     onClick={() => handleSave(false)}
                                     disabled={saving}
                                     aria-label={saveLabel}
@@ -844,6 +847,7 @@ export default function CVForm() {
                             <Tooltip label={f.preview} shortcut={SHORTCUTS.savePreview}>
                                 <Button
                                     size="sm"
+                                    className="max-lg:hidden"
                                     onClick={() => handleSave(true)}
                                     disabled={saving}
                                     aria-label={f.preview}
@@ -856,6 +860,24 @@ export default function CVForm() {
                                     <span className="hidden sm:inline">{f.preview}</span>
                                 </Button>
                             </Tooltip>
+                            {/* Below lg the sidebar is a closed drawer: New CV + a menu for the open CV */}
+                            <CVHeaderMenu
+                                className="lg:hidden"
+                                email={email.trim().toLowerCase()}
+                                name={fullName.trim()}
+                                savingMode={savingMode}
+                                onSave={() => handleSave(false)}
+                                onPreview={() => handleSave(true)}
+                                onNewCV={() => {
+                                    navigate("/create");
+                                    resetForm();
+                                }}
+                                onChanged={() => setSidebarRefresh((n) => n + 1)}
+                                onDeleted={() => {
+                                    resetForm();
+                                    navigate("/create");
+                                }}
+                            />
                         </div>
                     </div>
                 </header>
@@ -984,13 +1006,13 @@ export default function CVForm() {
                             </CardContent>
                         </Card>
 
-                        {/* Action Buttons */}
-                        <div className="flex flex-col sm:flex-row gap-3 pb-10">
+                        {/* Action buttons, with room below so the scroll-to-top button never covers them */}
+                        <div className="flex flex-col sm:flex-row gap-3 pb-28 lg:pb-12">
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="lg"
-                                className="flex-1"
+                                className="sm:flex-1 h-auto min-h-12 py-3"
                                 onClick={() => handleSave(false)}
                                 disabled={saving}
                             >
@@ -1000,16 +1022,16 @@ export default function CVForm() {
                                     <Save className="w-4 h-4" aria-hidden="true" />
                                 )}
                                 {savingMode === "save" ? f.saving : justSaved ? f.saved : f.saveDraft}
-                                <ShortcutKeys shortcut={SHORTCUTS.save} className="hidden sm:inline-flex ml-1 opacity-60" />
+                                <ShortcutKeys shortcut={SHORTCUTS.save} className="ml-1 opacity-60" />
                             </Button>
-                            <Button type="button" size="lg" className="flex-1" onClick={() => handleSave(true)} disabled={saving}>
+                            <Button type="button" size="lg" className="sm:flex-1 h-auto min-h-12 py-3" onClick={() => handleSave(true)} disabled={saving}>
                                 {savingMode === "preview" ? (
                                     <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" />
                                 ) : (
                                     <FileCheck className="w-4 h-4" aria-hidden="true" />
                                 )}
                                 {savingMode === "preview" ? f.building : f.previewBuild}
-                                <ShortcutKeys shortcut={SHORTCUTS.savePreview} className="hidden sm:inline-flex ml-1 opacity-70" />
+                                <ShortcutKeys shortcut={SHORTCUTS.savePreview} className="ml-1 opacity-70" />
                             </Button>
                         </div>
                     </div>

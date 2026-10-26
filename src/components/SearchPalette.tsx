@@ -6,6 +6,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import {
     Search,
+    X,
     Maximize2,
     Minimize2,
     ExternalLink,
@@ -260,7 +261,7 @@ function PaletteBody({
     );
 
     const rowActions = (cv: CVData) => (
-        <span className="flex items-center gap-0.5 -my-1">
+        <span className="hidden desk:flex items-center gap-0.5 -my-1">
             {!cv.isArchived && (
                 <RowButton label={cv.isPinned ? sb.unpin : sb.pin} onClick={() => onTogglePin(cv)} pressed={!!cv.isPinned}>
                     <Pin className={cn("w-4 h-4", cv.isPinned && "fill-current")} />
@@ -288,11 +289,12 @@ function PaletteBody({
                 id={optionId(row)}
                 role="option"
                 aria-selected={isSelected}
-                onPointerMove={() => !isSelected && setSelected(row.id)}
+                // Mouse only: on touch, a tap opens the row straight away, no highlight.
+                onPointerMove={(e) => e.pointerType === "mouse" && !isSelected && setSelected(row.id)}
                 onClick={() => activate(row)}
                 className={cn(
                     "flex items-center gap-3 min-h-12 rounded-2xl px-3 py-2 cursor-pointer transition-colors",
-                    isSelected ? "bg-cream/10 shadow-[inset_0_0_0_2px_var(--color-marigold)]" : "hover:bg-cream/5",
+                    isSelected ? "desk:bg-cream/10 desk:shadow-[inset_0_0_0_2px_var(--color-marigold)]" : "desk:hover:bg-cream/5",
                 )}
             >
                 {row.kind === "action" && Icon ? (
@@ -314,9 +316,12 @@ function PaletteBody({
                     {row.kind === "action" ? row.action.label : cvTitle(row.cv)}
                 </span>
                 {row.kind === "action" ? (
-                    row.action.shortcut && <ShortcutKeys shortcut={row.action.shortcut} className="hidden sm:inline-flex text-cream/60 text-[15px]" />
+                    row.action.shortcut && <ShortcutKeys shortcut={row.action.shortcut} className="text-cream/60 text-[15px]" />
                 ) : cv && isSelected ? (
-                    rowActions(cv)
+                    <>
+                        {rowActions(cv)}
+                        <span className="desk:hidden text-xs text-cream/55 whitespace-nowrap">{ago(cv.updatedAt, lang, now)}</span>
+                    </>
                 ) : cv ? (
                     <span className="text-xs text-cream/55 whitespace-nowrap">{ago(cv.updatedAt, lang, now)}</span>
                 ) : null}
@@ -365,6 +370,8 @@ function PaletteBody({
                     aria-keyshortcuts="Escape"
                 >
                     <Kbd className="text-[13px] px-2">{shortcutKeys(SHORTCUTS.close)[0]}</Kbd>
+                    {/* No Esc key on a phone: a plain close icon instead */}
+                    <X className="hotkey-alt w-6 h-6" aria-hidden="true" />
                 </Dialog.Close>
             </div>
             <div className="sm:hidden px-4 pt-3">{tabs}</div>
@@ -422,8 +429,9 @@ function PaletteBody({
                 )}
             </div>
 
-            {/* Footer: size toggle, key hints, actions for the highlighted row */}
-            <div className="flex items-center gap-3 px-3 sm:px-5 py-2.5 border-t border-cream/[0.12] text-xs text-cream/60">
+            {/* Footer: size toggle, key hints, actions for the highlighted row. Not in phone
+                mode, where a tap on a row simply opens it. */}
+            <div className="hidden desk:flex items-center gap-3 px-3 sm:px-5 py-2.5 border-t border-cream/[0.12] text-xs text-cream/60">
                 <Tooltip label={expanded ? s.minimize : s.maximize} side="top">
                     <button
                         type="button"
@@ -435,12 +443,12 @@ function PaletteBody({
                         {expanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </button>
                 </Tooltip>
-                <span className="hidden sm:flex items-center gap-1.5" aria-hidden="true">
+                <span className="hotkey hidden sm:flex items-center gap-1.5" aria-hidden="true">
                     <ShortcutKeys shortcut={SHORTCUTS.up} className="text-sm" />
                     <ShortcutKeys shortcut={SHORTCUTS.down} className="text-sm" />
                     {s.select}
                 </span>
-                <span className="hidden lg:flex items-center gap-1.5" aria-hidden="true">
+                <span className="hotkey hidden lg:flex items-center gap-1.5" aria-hidden="true">
                     <ShortcutKeys shortcut={SHORTCUTS.close} className="text-sm" />
                     {s.close}
                 </span>
@@ -500,7 +508,7 @@ function FooterAction({ label, shortcut, onClick }: { label: string; shortcut: S
             className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 font-bold text-cream/85 hover:text-cream hover:bg-cream/10 cursor-pointer"
         >
             {label}
-            <ShortcutKeys shortcut={shortcut} className="hidden sm:inline-flex text-sm text-cream/60" />
+            <ShortcutKeys shortcut={shortcut} className="text-sm text-cream/60" />
         </button>
     );
 }
