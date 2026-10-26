@@ -370,7 +370,7 @@ export default function Landing() {
         </section>
 
         {/* Closing card */}
-        <section data-header="light" className="px-5 sm:px-10 pt-6 pb-24 sm:pb-32">
+        <section data-header="light" className="px-5 sm:px-10 pt-24 sm:pt-32 lg:pt-36 pb-28 sm:pb-36">
           <div data-reveal className="relative max-w-[1080px] mx-auto rotate-[-1.2deg] rounded-[28px] bg-forest text-cream border-2 border-forest-deep shadow-stamp-marigold px-6 py-14 sm:px-16 sm:py-20 on-dark">
             <div className="text-center">
               <StepMeter

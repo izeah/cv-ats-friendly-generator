@@ -117,6 +117,15 @@ export function SiteHeader() {
 
     const dark = theme === "dark" && !open;
     const clear = dark && top;
+    // A hairline under the bar once the page scrolls, tinted for the section beneath.
+    // Inset shadow, not a border, so the bar stays 64px and the hero still meets it.
+    const edge = top
+        ? "shadow-[inset_0_-1px_0_0_transparent]"
+        : dark
+          ? "shadow-[inset_0_-1px_0_0_rgb(245_244_236/0.16)]"
+          : theme === "accent"
+            ? "shadow-[inset_0_-1px_0_0_rgb(16_56_11/0.3)]"
+            : "shadow-[inset_0_-1px_0_0_rgb(16_56_11/0.12)]";
 
     return (
         <>
@@ -125,8 +134,9 @@ export function SiteHeader() {
             <header
                 data-theme={theme}
                 className={cn(
-                    "no-print sticky top-0 transition-[background-color,color] duration-300",
+                    "no-print sticky top-0 transition-[background-color,color,box-shadow] duration-300",
                     open ? "z-[96]" : "z-50",
+                    edge,
                     clear
                         ? "bg-transparent text-cream"
                         : dark
@@ -222,7 +232,8 @@ export function SiteFooter() {
     const link = "inline-flex items-center gap-1.5 text-[17px] font-bold text-cream hover:text-marigold transition-colors";
     return (
         <footer data-header="dark" className="no-print on-dark relative overflow-hidden bg-forest-deep text-cream">
-            <div className="relative max-w-[1240px] mx-auto px-5 sm:px-10 pt-16 sm:pt-20">
+            {/* z-10 keeps the links above the glow and sparks rising from the pantry */}
+            <div className="relative z-10 max-w-[1240px] mx-auto px-5 sm:px-10 pt-16 sm:pt-20">
                 <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr]">
                     <div>
                         <BrandLink onDark />
