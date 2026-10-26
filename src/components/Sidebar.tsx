@@ -567,7 +567,7 @@ export default function Sidebar({
         <div className="flex flex-col h-full">
             {/* Logo */}
             <div className={cn("border-b border-forest/15", isCollapsed ? "py-4" : "p-4")}>
-                <div className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-between")}>
+                <div className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-between gap-3")}>
                     <Tooltip
                         label={isCollapsed ? s.expand : s.goHome}
                         shortcut={isCollapsed ? SHORTCUTS.toggleSidebar : SHORTCUTS.home}
@@ -853,7 +853,7 @@ export default function Sidebar({
             <div
                 className={cn(
                     "hidden lg:flex flex-col h-screen sticky top-0 border-r border-forest/20 bg-card transition-all duration-300 shrink-0",
-                    isCollapsed ? "w-[56px]" : "w-64",
+                    isCollapsed ? "w-[56px]" : "w-72",
                 )}
             >
                 {sidebarContent}
