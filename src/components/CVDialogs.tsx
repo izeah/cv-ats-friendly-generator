@@ -1,7 +1,7 @@
 // Dialogs and the toast shared by the sidebar and the phone header menu.
 import { useState, type ReactNode } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { CircleAlert, CircleCheck } from "lucide-react";
+import { CircleAlert, CircleCheck, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,19 +74,33 @@ export function RenameModal({ cv, onSave, onClose }: { cv: CVData; onSave: (labe
     );
 }
 
-export function DeleteModal({ cv, onConfirm, onClose }: { cv: CVData; onConfirm: () => void; onClose: () => void }) {
+export function DeleteModal({ cv, onConfirm, onClose }: { cv: CVData; onConfirm: () => unknown; onClose: () => void }) {
     const { t } = useI18n();
     const s = t.sidebar;
+    const [deleting, setDeleting] = useState(false);
     return (
         <Modal title={s.deleteTitle} onClose={onClose}>
             <p className="text-sm text-muted-foreground mb-6">
                 {rich(s.deleteBody, { name: <span className="font-bold text-foreground">{cvTitle(cv)}</span> })}
             </p>
             <div className="flex gap-3 justify-end">
-                <Button variant="ghost" onClick={onClose}>
+                <Button variant="ghost" onClick={onClose} disabled={deleting}>
                     {t.common.cancel}
                 </Button>
-                <Button variant="destructive" onClick={onConfirm}>
+                <Button
+                    variant="destructive"
+                    disabled={deleting}
+                    aria-busy={deleting}
+                    onClick={async () => {
+                        setDeleting(true);
+                        try {
+                            await Promise.all([onConfirm(), new Promise((r) => setTimeout(r, 450))]);
+                        } catch {
+                            setDeleting(false);
+                        }
+                    }}
+                >
+                    {deleting && <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" />}
                     {t.common.delete}
                 </Button>
             </div>

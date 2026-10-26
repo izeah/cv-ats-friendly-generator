@@ -35,8 +35,8 @@ interface CVHeaderMenuProps {
     /** Email of the CV in the form; the CV-specific items need it saved first. */
     email: string;
     savingMode: "save" | "preview" | null;
-    onSave: () => void;
-    onPreview: () => void;
+    onSave: () => unknown;
+    onPreview: () => unknown;
     onNewCV: () => void;
     /** Something about the stored CV changed (pin, label, archive): refresh lists. */
     onChanged: () => void;
@@ -67,6 +67,8 @@ export default function CVHeaderMenu({
     const [renameTarget, setRenameTarget] = useState<CVData | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<CVData | null>(null);
     const [toast, setToast] = useState<ToastState>(null);
+    // Label of the item whose action is running; the menu stays open with a spinner on it.
+    const [busy, setBusy] = useState<string | null>(null);
     const wrap = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -96,12 +98,22 @@ export default function CVHeaderMenu({
         else setCv(null);
     };
 
-    const run = (fn: () => void) => () => {
-        setOpen(false);
-        fn();
+    // Dexie writes finish in a few ms; hold the spinner long enough for a tap to register.
+    const run = (label: string, fn: () => unknown, instant?: boolean) => async () => {
+        if (instant) {
+            setOpen(false);
+            return fn();
+        }
+        setBusy(label);
+        try {
+            await Promise.all([fn(), new Promise((r) => setTimeout(r, 450))]);
+        } finally {
+            setBusy(null);
+            setOpen(false);
+        }
     };
 
-    const entries: ({ icon: LucideIcon; label: string; onClick: () => void; disabled?: boolean; danger?: boolean } | "divider")[] = [
+    const entries: ({ icon: LucideIcon; label: string; onClick: () => unknown; disabled?: boolean; danger?: boolean; instant?: boolean } | "divider")[] = [
         { icon: savingMode === "save" ? LoaderCircle : Save, label: f.save, onClick: onSave, disabled: !!savingMode },
         { icon: savingMode === "preview" ? LoaderCircle : Eye, label: f.preview, onClick: onPreview, disabled: !!savingMode },
         "divider",
@@ -115,12 +127,13 @@ export default function CVHeaderMenu({
             },
             disabled: !cv || cv.isArchived,
         },
-        { icon: Pencil, label: s.rename, onClick: () => cv && setRenameTarget(cv), disabled: !cv },
+        { icon: Pencil, label: s.rename, onClick: () => cv && setRenameTarget(cv), disabled: !cv, instant: true },
         {
             icon: ExternalLink,
             label: s.openNewTab,
             onClick: () => cv && window.open(`/create?email=${encodeURIComponent(cv.email)}`, "_blank", "noopener"),
             disabled: !cv,
+            instant: true,
         },
         {
             icon: Download,
@@ -143,7 +156,7 @@ export default function CVHeaderMenu({
             disabled: !cv,
         },
         "divider",
-        { icon: Trash2, label: s.delete, onClick: () => cv && setDeleteTarget(cv), disabled: !cv, danger: true },
+        { icon: Trash2, label: s.delete, onClick: () => cv && setDeleteTarget(cv), disabled: !cv, danger: true, instant: true },
     ];
 
     return (
@@ -172,14 +185,20 @@ export default function CVHeaderMenu({
                             <button
                                 key={entry.label}
                                 type="button"
-                                className={cn(item, entry.danger && "text-destructive hover:bg-destructive/10")}
-                                onClick={run(entry.onClick)}
-                                disabled={entry.disabled}
+                                className={cn(item, busy === entry.label && "disabled:opacity-100", entry.danger && "text-destructive hover:bg-destructive/10")}
+                                onClick={run(entry.label, entry.onClick, entry.instant)}
+                                disabled={entry.disabled || !!busy}
+                                aria-busy={busy === entry.label}
                             >
-                                <entry.icon
-                                    className={cn("w-4 h-4", !entry.danger && "text-primary/70", entry.icon === LoaderCircle && "animate-spin")}
-                                    aria-hidden="true"
-                                />
+                                {(() => {
+                                    const Icon = busy === entry.label ? LoaderCircle : entry.icon;
+                                    return (
+                                        <Icon
+                                            className={cn("w-4 h-4", !entry.danger && "text-primary/70", Icon === LoaderCircle && "animate-spin")}
+                                            aria-hidden="true"
+                                        />
+                                    );
+                                })()}
                                 {entry.label}
                             </button>
                         ),
