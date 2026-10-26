@@ -3,10 +3,10 @@ import type { ReactElement, ReactNode } from "react";
 import { ariaKeys, type Shortcut } from "@/lib/shortcuts";
 import { ShortcutKeys } from "@/components/ui/kbd";
 
-/** One shared delay for every tooltip; hovering along a row of buttons skips it. */
+/** Tooltips open the moment the pointer arrives, every time. */
 export function TooltipProvider({ children }: { children: ReactNode }) {
     return (
-        <T.Provider delayDuration={350} skipDelayDuration={250}>
+        <T.Provider delayDuration={0} skipDelayDuration={0}>
             {children}
         </T.Provider>
     );

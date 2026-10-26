@@ -164,23 +164,37 @@ body {
   color: var(--color-forest);
 }
 
-/* Scrollbar */
+/* Scrollbars stay invisible at rest and show a thin thumb only while that element
+   scrolls: useScrollbarActivity() puts data-scrolling on it for a moment. */
+:root {
+  --scroll-thumb: color-mix(in srgb, var(--color-forest) 40%, transparent);
+}
+.on-dark {
+  --scroll-thumb: color-mix(in srgb, var(--color-cream) 40%, transparent);
+}
+@supports (scrollbar-color: auto) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  [data-scrolling] {
+    scrollbar-color: var(--scroll-thumb) transparent;
+  }
+}
+/* Safari (and Chromium before scrollbar-color) style the pseudo-elements instead */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  background: var(--color-background);
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-forest) 35%, transparent);
+  background: transparent;
   border-radius: 9999px;
 }
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-forest);
+[data-scrolling]::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
 }
 
 /* CV Print Styles */

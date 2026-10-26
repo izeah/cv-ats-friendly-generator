@@ -814,7 +814,7 @@ export default function CVForm() {
 
             <div className="flex-1 min-w-0">
                 {/* Header */}
-                <header className="sticky top-0 z-50 glass border-b border-forest/10">
+                <header className="sticky top-0 z-50 glass">
                     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">
                             <div className="pl-12 lg:pl-0 min-w-0">

@@ -566,7 +566,7 @@ export default function Sidebar({
     const sidebarContent = (
         <div className="flex flex-col h-full">
             {/* Logo */}
-            <div className={cn("border-b border-forest/15", isCollapsed ? "py-4" : "p-4")}>
+            <div className={isCollapsed ? "py-4" : "p-4"}>
                 <div className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-between gap-3")}>
                     <Tooltip
                         label={isCollapsed ? s.expand : s.goHome}
@@ -842,7 +842,7 @@ export default function Sidebar({
             <div
                 inert={!isMobileOpen}
                 className={cn(
-                    "fixed top-0 left-0 h-full w-72 z-[80] bg-card border-r border-foreground transition-transform duration-300 lg:hidden",
+                    "fixed top-0 left-0 h-full w-80 max-w-[85vw] z-[80] bg-card transition-transform duration-300 lg:hidden",
                     isMobileOpen ? "translate-x-0" : "-translate-x-full",
                 )}
             >
@@ -852,8 +852,8 @@ export default function Sidebar({
             {/* Desktop sidebar */}
             <div
                 className={cn(
-                    "hidden lg:flex flex-col h-screen sticky top-0 border-r border-forest/20 bg-card transition-all duration-300 shrink-0",
-                    isCollapsed ? "w-[56px]" : "w-72",
+                    "hidden lg:flex flex-col h-screen sticky top-0 bg-card transition-all duration-300 shrink-0",
+                    isCollapsed ? "w-[56px]" : "w-80",
                 )}
             >
                 {sidebarContent}

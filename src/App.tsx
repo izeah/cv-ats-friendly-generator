@@ -5,6 +5,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { LanguageProvider } from '@/components/Language'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { useScrollbarActivity } from '@/lib/useScrollbarActivity'
 
 // Landing stays eager: it's the SEO entry. Everything else loads on demand.
 const CVForm = lazy(() => import('@/pages/CVForm'))
@@ -24,6 +25,8 @@ function PageFallback() {
 }
 
 function App() {
+  useScrollbarActivity()
+
   return (
     <LanguageProvider>
       <TooltipProvider>
