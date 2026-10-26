@@ -113,7 +113,7 @@ export default function CVPreview() {
     : <Share2 className="w-3.5 h-3.5" aria-hidden="true" />
 
   const header = (
-    <div className="sticky top-0 z-50 glass border-b border-forest/15 no-print">
+    <div className="sticky top-0 z-50 glass no-print">
       <div className="max-w-[850px] mx-auto px-4 py-3 flex items-center justify-between gap-3">
         {shared ? (
           <BrandLink size="sm" />
