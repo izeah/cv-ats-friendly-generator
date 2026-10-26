@@ -2,14 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
     Plus,
-    ChevronRight,
     Trash2,
     Archive,
     ArchiveRestore,
-    Menu,
-    X,
     Eye,
-    ChevronLeft,
     MoreVertical,
     Download,
     Upload,
@@ -46,6 +42,29 @@ interface SidebarProps {
 
 const menuItem =
     "w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-secondary transition-colors border-b border-forest/10 last:border-b-0";
+
+/** Show/hide sidebar toggle: a window with its side panel drawn full height
+ *  while the sidebar is open, shrunk to a short bar while it is hidden. */
+function SidebarIcon({ open, className }: { open: boolean; className?: string }) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+            aria-hidden="true"
+        >
+            <rect x="2.75" y="4" width="18.5" height="16" rx="4" />
+            {open ? <path d="M10 4v16" /> : <path d="M7.25 9v6" />}
+        </svg>
+    );
+}
+
+const toggleButton =
+    "w-8 h-8 rounded-lg items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors";
 
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
     return (
@@ -274,8 +293,8 @@ export default function Sidebar({
     const sidebarContent = (
         <div className="flex flex-col h-full">
             {/* Logo */}
-            <div className="p-4 border-b border-forest/15">
-                <div className="flex items-center justify-between">
+            <div className={cn("border-b border-forest/15", isCollapsed ? "py-4" : "p-4")}>
+                <div className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-between")}>
                     <button
                         type="button"
                         className={cn(
@@ -300,31 +319,32 @@ export default function Sidebar({
                                 )}
                             />
                             {isCollapsed && (
-                                <span className="absolute inset-0 rounded-[10px] bg-forest flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <ChevronRight className="w-4 h-4 text-cream" aria-hidden="true" />
+                                <span className="absolute inset-0 rounded-[10px] bg-forest flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
+                                    <SidebarIcon open={false} className="w-5 h-5 text-cream" />
                                 </span>
                             )}
                         </span>
                         {!isCollapsed && <Wordmark className="text-[13px]" />}
                     </button>
-                    {/* Collapse button - desktop only */}
+                    {/* Hide button - desktop only */}
                     {!isCollapsed && (
                         <button
                             onClick={() => onToggleSidebar?.()}
                             aria-label={s.collapse}
                             title={s.collapse}
-                            className="hidden lg:flex w-6 h-6 rounded items-center justify-center hover:bg-muted/50 text-muted-foreground transition-colors"
+                            className={cn(toggleButton, "hidden lg:flex")}
                         >
-                            <ChevronLeft className="w-3.5 h-3.5" />
+                            <SidebarIcon open className="w-5 h-5" />
                         </button>
                     )}
                     {/* Close button - mobile only */}
                     <button
                         onClick={() => setIsMobileOpen(false)}
                         aria-label={s.closeMenu}
-                        className="lg:hidden flex w-6 h-6 rounded items-center justify-center hover:bg-muted/50 text-muted-foreground"
+                        title={s.closeMenu}
+                        className={cn(toggleButton, "flex lg:hidden")}
                     >
-                        <X className="w-4 h-4" />
+                        <SidebarIcon open className="w-5 h-5" />
                     </button>
                 </div>
             </div>
@@ -545,9 +565,10 @@ export default function Sidebar({
             <button
                 onClick={() => setIsMobileOpen(true)}
                 aria-label={s.openMenu}
+                title={s.openMenu}
                 className="fixed top-3 left-3 z-[60] lg:hidden w-9 h-9 rounded-full bg-card border-2 border-forest flex items-center justify-center text-foreground hover:bg-muted/50 transition-colors"
             >
-                <Menu className="w-4 h-4" />
+                <SidebarIcon open={false} className="w-[18px] h-[18px]" />
             </button>
 
             {/* Mobile overlay */}
