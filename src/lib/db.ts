@@ -37,7 +37,15 @@ export interface CVData {
   isArchived: boolean
   createdAt: Date
   updatedAt: Date
+  /** Name shown in the sidebar and search. The CV itself keeps fullName. */
+  label?: string
+  isPinned?: boolean
+  pinnedAt?: Date
 }
+
+/** What the sidebar and search call a CV: its list label, else the name on it. */
+export const cvTitle = (cv: Pick<CVData, 'label' | 'fullName'>): string =>
+  cv.label?.trim() || cv.fullName
 
 // ===== Database =====
 
@@ -79,8 +87,10 @@ export const db = new CVDatabase()
 export async function saveCVData(data: CVData): Promise<void> {
   const existing = await db.cvs.get(data.email)
   if (existing) {
+    // The form sends a fresh createdAt on every save; keep the first one.
     await db.cvs.update(data.email, {
       ...data,
+      createdAt: existing.createdAt,
       updatedAt: new Date(),
     })
   } else {
@@ -118,8 +128,27 @@ export async function getArchivedCVs(): Promise<CVData[]> {
 export async function toggleArchive(email: string): Promise<void> {
   const cv = await db.cvs.get(email)
   if (cv) {
-    await db.cvs.update(email, { isArchived: !cv.isArchived, updatedAt: new Date() })
+    // Archiving also unpins: the pinned list only shows active CVs.
+    await db.cvs.update(email, {
+      isArchived: !cv.isArchived,
+      ...(cv.isArchived ? {} : { isPinned: false, pinnedAt: undefined }),
+      updatedAt: new Date(),
+    })
   }
+}
+
+/** Sets the list label. Empty, or the same as the name on the CV, clears it. */
+export async function renameCV(email: string, label: string): Promise<void> {
+  const cv = await db.cvs.get(email)
+  if (!cv) return
+  const clean = label.trim()
+  await db.cvs.update(email, { label: clean && clean !== cv.fullName ? clean : undefined })
+}
+
+export async function togglePin(email: string): Promise<void> {
+  const cv = await db.cvs.get(email)
+  if (!cv) return
+  await db.cvs.update(email, cv.isPinned ? { isPinned: false, pinnedAt: undefined } : { isPinned: true, pinnedAt: new Date() })
 }
 
 export async function deleteCVByEmail(email: string): Promise<void> {
@@ -142,8 +171,13 @@ export function downloadCVJson(cv: CVData): void {
 // Share links carry the same JSON as the export (minus indentation) as URL-safe
 // base64 in the hash: /cv-share#<data>. The hash never reaches the server.
 export function cvShareUrl(cv: CVData): string {
+  // The list label and pin belong to this device, not to whoever opens the link.
+  const shared: Partial<CVData> = { ...cv }
+  delete shared.label
+  delete shared.isPinned
+  delete shared.pinnedAt
   let bin = ''
-  new TextEncoder().encode(JSON.stringify(cv)).forEach(b => (bin += String.fromCharCode(b)))
+  new TextEncoder().encode(JSON.stringify(shared)).forEach(b => (bin += String.fromCharCode(b)))
   const data = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
   return `${location.origin}/cv-share#${data}`
 }
@@ -211,5 +245,6 @@ export function parseCVJson(text: string): CVData {
     isArchived: false,
     createdAt: now,
     updatedAt: now,
+    label: str(raw.label).trim() || undefined,
   }
 }

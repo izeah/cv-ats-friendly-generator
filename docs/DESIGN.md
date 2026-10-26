@@ -78,6 +78,37 @@ Scale (clamp, desktop → phone): hero `44–92px`, section `34–58px`, step `2
   comes to rest level with the last item (testimonials).
 - **Section rhythm**: `.section` padding `clamp(76px, 9vw, 132px)`; content
   width `1240px` with `px-5 sm:px-10`.
+- **Search palette** (`SearchPalette`, ⌘K / Ctrl K from the sidebar): a forest
+  panel with a cream border and the marigold offset shadow. Actions get colour
+  tiles, CVs are grouped Pinned → last 7 days → last 30 days → older, and the
+  maximized size adds a preview of the highlighted row (minimized drops it; the
+  choice is remembered). The footer always shows the keys for what is highlighted.
+- **CV list**: pinned CVs sit under their own heading; hovering a row shows the
+  pin and the menu (rename, open in new tab, pin, preview, export, archive, delete).
+  "Rename" sets a list label only; the name printed on the CV never changes.
+
+## Tooltips and shortcuts
+
+- No native `title` bubbles. Wrap the control in `<Tooltip label shortcut? side?>`
+  (`src/components/ui/tooltip.tsx`): a small forest sticker with a marigold
+  offset shadow, the label, then the keys.
+- Every shortcut lives in `SHORTCUTS` (`src/lib/shortcuts.ts`); handlers use
+  `useShortcut`, tooltips and the palette read the same entry, and the control
+  gets `aria-keyshortcuts`. `mod` is ⌘ on macOS and Ctrl elsewhere; keys are
+  shown as inline-code caps (`<ShortcutKeys>`, `<Kbd>`): ⇧ ⌘ O on a Mac,
+  Ctrl Shift O elsewhere. Skip browser-reserved combos (new tab, private window,
+  devtools).
+
+| Where | Action | Keys (Mac / others) |
+|---|---|---|
+| Builder | Search | ⌘K / Ctrl K |
+| Builder | New CV | ⇧⌘O / Ctrl Shift O |
+| Builder | Import JSON | ⇧⌘U / Ctrl Shift U |
+| Builder | Show / hide sidebar | ⌘B / Ctrl B |
+| Builder | Home | ⇧⌘H / Ctrl Shift H |
+| Form | Save · Save and preview | ⌘S · ⌘↵ / Ctrl S · Ctrl Enter |
+| Preview | Edit · Copy share link · PDF | ⌘E · ⇧⌘L · ⌘P |
+| Palette | Open · new tab · rename · delete | ↵ · ⌘↵ · ⇧⌘E · ⇧⌘D |
 
 ## Motion
 

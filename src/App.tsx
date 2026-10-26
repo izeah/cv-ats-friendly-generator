@@ -4,6 +4,8 @@ import Landing from '@/pages/Landing'
 import ScrollToTop from '@/components/ScrollToTop'
 import { LanguageProvider } from '@/components/Language'
 import { Skeleton } from '@/components/ui/skeleton'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { useScrollbarActivity } from '@/lib/useScrollbarActivity'
 
 // Landing stays eager: it's the SEO entry. Everything else loads on demand.
 const CVForm = lazy(() => import('@/pages/CVForm'))
@@ -23,22 +25,26 @@ function PageFallback() {
 }
 
 function App() {
+  useScrollbarActivity()
+
   return (
     <LanguageProvider>
-      <BrowserRouter>
-        <Suspense fallback={<PageFallback />}>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/create" element={<CVForm />} />
-            <Route path="/cv/:slug" element={<CVPreview />} />
-            <Route path="/cv-share" element={<CVPreview />} />
-            <Route path="/privacy" element={<Legal doc="privacy" />} />
-            <Route path="/terms" element={<Legal doc="terms" />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-        <ScrollToTop />
-      </BrowserRouter>
+      <TooltipProvider>
+        <BrowserRouter>
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/create" element={<CVForm />} />
+              <Route path="/cv/:slug" element={<CVPreview />} />
+              <Route path="/cv-share" element={<CVPreview />} />
+              <Route path="/privacy" element={<Legal doc="privacy" />} />
+              <Route path="/terms" element={<Legal doc="terms" />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+          <ScrollToTop />
+        </BrowserRouter>
+      </TooltipProvider>
     </LanguageProvider>
   )
 }

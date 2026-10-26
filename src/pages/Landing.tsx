@@ -80,11 +80,11 @@ function Hero() {
       data-header="dark"
       onPointerMove={onMove}
       onPointerLeave={() => ref.current?.removeAttribute('data-lit')}
-      className="on-dark relative -mt-16 overflow-clip bg-forest text-cream"
+      className="on-dark relative -mt-16 min-h-svh flex flex-col justify-center overflow-clip bg-forest text-cream"
     >
       <div className="hero-grid" aria-hidden="true"><span /></div>
       <div className="hero-grid is-glow" aria-hidden="true"><span /></div>
-      <div className="relative max-w-[1240px] mx-auto px-5 sm:px-10 pt-28 sm:pt-36 pb-20 sm:pb-24 grid lg:grid-cols-[1.08fr_1fr] gap-16 lg:gap-10 items-center">
+      <div className="relative w-full max-w-[1240px] mx-auto px-5 sm:px-10 pt-28 sm:pt-36 pb-20 sm:pb-24 grid lg:grid-cols-[1.08fr_1fr] gap-16 lg:gap-10 items-center">
         <div className="-rotate-2 origin-left">
           <p className="flex flex-wrap items-center gap-x-2 text-xs font-bold text-marigold mb-6 animate-fade-in">
             <span>{t.hero.eyebrow}</span>
@@ -142,6 +142,16 @@ export default function Landing() {
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView()
   }, [hash])
+
+  // Forest page canvas while the landing is up, so overscroll and the first paint
+  // match the dark hero (index.html sets the same flag before any script runs).
+  useEffect(() => {
+    const root = document.documentElement
+    root.dataset.page = 'landing'
+    return () => {
+      delete root.dataset.page
+    }
+  }, [])
 
   useEffect(() => {
     // Dynamic so Dexie stays out of the landing's first load.
@@ -360,7 +370,7 @@ export default function Landing() {
         </section>
 
         {/* Closing card */}
-        <section data-header="light" className="px-5 sm:px-10 pt-6 pb-24 sm:pb-32">
+        <section data-header="light" className="px-5 sm:px-10 pt-24 sm:pt-32 lg:pt-36 pb-28 sm:pb-36">
           <div data-reveal className="relative max-w-[1080px] mx-auto rotate-[-1.2deg] rounded-[28px] bg-forest text-cream border-2 border-forest-deep shadow-stamp-marigold px-6 py-14 sm:px-16 sm:py-20 on-dark">
             <div className="text-center">
               <StepMeter

@@ -12,6 +12,8 @@ import { Mascot, MascotAvatar } from '@/components/Mascot'
 import { BrandLink } from '@/components/SiteChrome'
 import { LanguageSwitcher } from '@/components/Language'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tooltip } from '@/components/ui/tooltip'
+import { SHORTCUTS, useShortcut } from '@/lib/shortcuts'
 
 export default function CVPreview() {
   const { slug } = useParams<{ slug: string }>()
@@ -99,6 +101,10 @@ export default function CVPreview() {
     }
   }
 
+  useShortcut(SHORTCUTS.edit, handleEdit, { enabled: !shared })
+  useShortcut(SHORTCUTS.share, shareLink, { enabled: !!cv })
+  useShortcut(SHORTCUTS.pdf, () => !exporting && exportToPDF(), { enabled: !!cv })
+
   const pdfIcon = exporting
     ? <LoaderCircle className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
     : <Download className="w-3.5 h-3.5" aria-hidden="true" />
@@ -107,25 +113,31 @@ export default function CVPreview() {
     : <Share2 className="w-3.5 h-3.5" aria-hidden="true" />
 
   const header = (
-    <div className="sticky top-0 z-50 glass border-b border-forest/15 no-print">
+    <div className="sticky top-0 z-50 glass no-print">
       <div className="max-w-[850px] mx-auto px-4 py-3 flex items-center justify-between gap-3">
         {shared ? (
           <BrandLink size="sm" />
         ) : (
-          <Button variant="ghost" size="sm" onClick={handleEdit}>
-            <ArrowLeft className="w-4 h-4" /> {p.backToEdit}
-          </Button>
+          <Tooltip label={p.backToEdit} shortcut={SHORTCUTS.edit} align="start">
+            <Button variant="ghost" size="sm" onClick={handleEdit}>
+              <ArrowLeft className="w-4 h-4" /> {p.backToEdit}
+            </Button>
+          </Tooltip>
         )}
         <div className="flex items-center gap-2">
           <LanguageSwitcher compact />
           {cv && (
             <div className="hidden sm:flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={shareLink}>
-                {shareIcon} {copied ? p.copied : p.share}
-              </Button>
-              <Button size="sm" onClick={exportToPDF} disabled={exporting}>
-                {pdfIcon} {exporting ? p.pdfBusy : p.pdf}
-              </Button>
+              <Tooltip label={p.shareTip} shortcut={SHORTCUTS.share}>
+                <Button variant="outline" size="sm" onClick={shareLink}>
+                  {shareIcon} {copied ? p.copied : p.share}
+                </Button>
+              </Tooltip>
+              <Tooltip label={p.pdfTip} shortcut={SHORTCUTS.pdf} align="end">
+                <Button size="sm" onClick={exportToPDF} disabled={exporting}>
+                  {pdfIcon} {exporting ? p.pdfBusy : p.pdf}
+                </Button>
+              </Tooltip>
             </div>
           )}
         </div>
@@ -398,7 +410,7 @@ export default function CVPreview() {
         </article>
 
         {/* Mobile Bottom Actions */}
-        <div className="fixed bottom-0 left-0 right-0 glass border-t border-forest/15 p-3 sm:hidden no-print">
+        <div className="fixed bottom-0 left-0 right-0 glass p-3 sm:hidden no-print">
           <div className="flex gap-2 max-w-[850px] mx-auto">
             {!shared && (
               <Button variant="outline" size="default" className="flex-1 px-3" onClick={handleEdit}>
